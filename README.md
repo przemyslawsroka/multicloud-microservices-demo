@@ -10,14 +10,15 @@
 This demo showcases a modern **multicloud microservices architecture** where the core Online Boutique application runs on **Google Cloud Platform**, while integrated business services are distributed across **AWS**, **Azure**, and **GCP** using different networking patterns:
 
 ### **Core Application (GCP)**
-- **Online Boutique**: 11 microservices on Google Kubernetes Engine (GKE)
+- **Online Boutique**: 12 microservices on Google Kubernetes Engine (GKE)
 - **Load Generator**: Tests both boutique and multicloud services
 
 ### **Multicloud Business Services**
-- 🟧 **AWS**: Accounting Service (Financial transactions) - *Public Internet*
-- 🔵 **Azure**: Analytics Service (Performance metrics) - *Public Internet*  
+- 🔵 **Azure**: Analytics Service (Performance metrics) - *Private via Interconnect*
 - 🟢 **GCP CRM**: Customer management - *Private via VPC Peering*
 - 🟢 **GCP Inventory**: Stock management - *Private via PSC (Private Service Connect)*
+- 🟢 **GCP Food**: Food catalog - *Private via Direct VPC Egress*
+- 🟢 **GCP Accounting**: Financial transactions - *Private via VPC Connector*
 
 ### **Communication Diagram**
 
@@ -27,13 +28,14 @@ The Load Generator demonstrates four different networking patterns:
 
 | Service | Network Type | Technology | Security Level |
 |---------|-------------|------------|----------------|
-| **AWS Accounting** | Public Internet | External IPs + Internet Gateway | Standard HTTPS |
-| **Azure Analytics** | Public Internet | Public IPs + Network Security Groups | Standard HTTPS |
+| **Azure Analytics** | Private Network | Interconnect | Highly secure |
 | **GCP CRM** | Private Network | VPC Peering + Private IPs | Internal only |
 | **GCP Inventory** | Private Network | Private Service Connect (PSC) | Highly secure |
+| **GCP Food** | Private Network | Direct VPC Egress | Highly secure |
+| **GCP Accounting** | Private Network | VPC Connector | Highly secure |
 
 ### **🚀 Key Features**
-- **Multi-region deployment**: Services span across `us-east-1` (AWS), `West Europe` (Azure), and `europe-west1` (GCP)
+- **Multi-region deployment**: Services span across `West Europe` (Azure) and `us-central1`, `asia-east1`, `europe-west1` (GCP)
 - **Diverse networking**: Public internet, VPC peering, and Private Service Connect examples
 - **Infrastructure as Code**: Complete Terraform configurations for all cloud providers
 - **RESTful APIs**: Consistent HTTP/JSON interfaces across all services
@@ -53,7 +55,7 @@ If you’re using this demo, please **★Star** this repository to show your int
 
 ## Architecture
 
-**Online Boutique** is composed of 11 microservices written in different
+**Online Boutique** is composed of 12 microservices written in different
 languages that talk to each other over gRPC.
 
 [![Architecture of
@@ -74,6 +76,7 @@ Find **Protocol Buffers Descriptions** at the [`./protos` directory](/protos).
 | [recommendationservice](/src/recommendationservice) | Python        | Recommends other products based on what's given in the cart.                                                                      |
 | [adservice](/src/adservice)                         | Java          | Provides text ads based on given context words.                                                                                   |
 | [loadgenerator](/src/loadgenerator)                 | Python/Locust | Continuously sends requests imitating realistic user shopping flows to the frontend.                                              |
+| [shoppingassistantservice](/src/shoppingassistantservice) | Python        | Provides AI-based product recommendations based on images and text prompts.                                                     |
 
 ## Screenshots
 
@@ -202,6 +205,8 @@ For detailed instructions: **[📁 Multicloud Documentation →](multicloud/READ
 - **Istio / Cloud Service Mesh**: [See these instructions](/kustomize/components/service-mesh-istio/README.md) to deploy Online Boutique alongside an Istio-backed service mesh.
 - **Non-GKE clusters (Minikube, Kind, etc)**: See the [Development guide](/docs/development-guide.md) to learn how you can deploy Online Boutique on non-GKE clusters.
 - **AI assistant using Gemini**: [See these instructions](/kustomize/components/shopping-assistant/README.md) to deploy a Gemini-powered AI assistant that suggests products to purchase based on an image.
+- **Skaffold**: See the [Development guide](/docs/development-guide.md) to learn how to develop Online Boutique locally with [Skaffold](https://skaffold.dev/).
+- **Helm**: See [these instructions](/helm-chart) to learn how to deploy Online Boutique with [Helm](https://helm.sh/).
 - **And more**: The [`/kustomize` directory](/kustomize) contains instructions for customizing the deployment of Online Boutique with other variations.
 
 ## Documentation

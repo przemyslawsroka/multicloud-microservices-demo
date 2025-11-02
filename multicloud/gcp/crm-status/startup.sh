@@ -348,7 +348,7 @@ app.get('/', (req, res) => {
                         throw new Error(data.error || 'Unknown backend error');
                     }
                 } else {
-                    throw new Error('Frontend API error! status: ' + response.status);
+                    throw new Error(`Frontend API error! status: ${response.status}`);
                 }
 
                 lastCheck.textContent = new Date().toLocaleString();

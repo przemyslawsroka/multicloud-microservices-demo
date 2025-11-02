@@ -95,7 +95,7 @@ type checkoutService struct {
 	gcpCrmURL           string
 	gcpInventoryURL     string
 	gcpFurnitureURL     string
-	gcpFoodURL          string
+	gcpWarehouseURL     string
 	gcpAccountingURL    string
 }
 
@@ -147,11 +147,11 @@ func main() {
 	svc.gcpCrmURL = os.Getenv("GCP_CRM_URL")
 	svc.gcpInventoryURL = os.Getenv("GCP_INVENTORY_URL")
 	svc.gcpFurnitureURL = os.Getenv("GCP_FURNITURE_URL")
-	svc.gcpFoodURL = os.Getenv("GCP_FOOD_URL")
+	svc.gcpWarehouseURL = os.Getenv("GCP_WAREHOUSE_URL")
 	svc.gcpAccountingURL = os.Getenv("GCP_ACCOUNTING_URL")
 	
-	log.Infof("Multicloud services configured: awsAccounting=%q azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q gcpFood=%q gcpAccounting=%q",
-		svc.awsAccountingURL, svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL, svc.gcpFoodURL, svc.gcpAccountingURL)
+	log.Infof("Multicloud services configured: awsAccounting=%q azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q gcpWarehouse=%q gcpAccounting=%q",
+		svc.awsAccountingURL, svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL, svc.gcpWarehouseURL, svc.gcpAccountingURL)
 
 	log.Infof("service config: %+v", svc)
 
@@ -292,9 +292,9 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		// Don't fail the order, just log
 	}
 
-	// Check food service
-	if err := cs.checkFood(ctx); err != nil {
-		log.Warnf("Food service check failed: %v", err)
+	// Check warehouse service
+	if err := cs.checkWarehouse(ctx); err != nil {
+		log.Warnf("Warehouse service check failed: %v", err)
 		// Don't fail the order, just log
 	}
 
@@ -591,36 +591,36 @@ func (cs *checkoutService) checkFurniture(ctx context.Context) error {
 	return cs.postJSON(ctx, cs.gcpFurnitureURL+"/furniture", furnitureData)
 }
 
-// checkFood calls GCP Food Service on Cloud Run (which internally calls Inventory Service)
-func (cs *checkoutService) checkFood(ctx context.Context) error {
-	if cs.gcpFoodURL == "" {
-		log.Debug("GCP Food URL not configured, skipping")
+// checkWarehouse calls GCP Warehouse Service on Cloud Run (which internally calls Inventory Service)
+func (cs *checkoutService) checkWarehouse(ctx context.Context) error {
+	if cs.gcpWarehouseURL == "" {
+		log.Debug("GCP Warehouse URL not configured, skipping")
 		return nil
 	}
 
-	// GET food list - this will trigger the food service to call inventory service
-	foodData, err := cs.getJSON(ctx, cs.gcpFoodURL+"/food")
+	// GET warehouse list - this will trigger the warehouse service to call inventory service
+	warehouseData, err := cs.getJSON(ctx, cs.gcpWarehouseURL+"/warehouse")
 	if err != nil {
-		log.Warnf("Failed to check food service: %v", err)
+		log.Warnf("Failed to check warehouse service: %v", err)
 		return err
 	}
 
-	log.Infof("Successfully checked food service, received data: %v", foodData)
+	log.Infof("Successfully checked warehouse service, received data: %v", warehouseData)
 	
-	// Optionally POST a new food item
-	newFood := map[string]interface{}{
-		"name":      "Caesar Salad",
-		"category":  "Salad",
-		"price":     8.99,
+	// Optionally POST a new warehouse item
+	newWarehouseItem := map[string]interface{}{
+		"name":      "Vintage Lamp",
+		"category":  "Lighting",
+		"price":     79.99,
 		"available": true,
 	}
 
-	if err := cs.postJSON(ctx, cs.gcpFoodURL+"/food", newFood); err != nil {
-		log.Warnf("Failed to add food item: %v", err)
+	if err := cs.postJSON(ctx, cs.gcpWarehouseURL+"/warehouse", newWarehouseItem); err != nil {
+		log.Warnf("Failed to add warehouse item: %v", err)
 		// Don't return error, just log
 	}
 
-	log.Infof("Food service check completed successfully")
+	log.Infof("Warehouse service check completed successfully")
 	return nil
 }
 

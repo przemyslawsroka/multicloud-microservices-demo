@@ -84,7 +84,7 @@ cartService:
 checkoutService:
   create: true
   name: checkoutservice
-  gcpFoodUrl: "https://food-api-service-985429063844.europe-west1.run.app"
+  gcpWarehouseUrl: "https://warehouse-api-service-985429063844.europe-west1.run.app"
   gcpAccountingUrl: "https://accounting-api-service-985429063844.us-central1.run.app"
   resources:
     requests:

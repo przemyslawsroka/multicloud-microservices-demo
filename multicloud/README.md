@@ -23,7 +23,7 @@ The multicloud setup demonstrates modern microservices deployment patterns with 
 ### GCP Services
 - **CRM Service** (Customer relationship management) - VM in asia-east1
 - **Inventory Service** (Stock management) - VM with Private IP only in europe-west1
-- **Food Service** (Food catalog) - Cloud Run with Direct VPC Egress
+- **Warehouse Service** (Warehouse catalog) - Cloud Run with Direct VPC Egress
 - **Accounting Service** (Financial transactions) - Cloud Run with VPC Connector
 
 ### Network Architecture
@@ -35,7 +35,7 @@ The multicloud setup demonstrates modern microservices deployment patterns with 
 
 **Advanced Networking Patterns**:
 - **Private Service Connect (PSC)**: Secure private connection to inventory service
-- **Direct VPC Egress**: Food service (Cloud Run) directly connected to inventory VPC
+- **Direct VPC Egress**: Warehouse service (Cloud Run) directly connected to inventory VPC
 - **VPC Connector**: Accounting service (Cloud Run) connected to CRM VPC via Serverless VPC Access
 - **Firewall Rules**: Granular control for service-to-service communication
 
@@ -192,9 +192,9 @@ All VM services run Node.js applications on port 8080 with RESTful APIs.
 - `400 Bad Request`: Invalid quantity or stock level
 - `404 Not Found`: Product not found
 
-### 4. GCP Food Service (`gcp/food.tf` + `gcp/food-service/`)
+### 4. GCP Warehouse Service (`gcp/warehouse.tf` + `gcp/warehouse-service/`)
 
-**Purpose**: Manages food product catalog with inventory integration  
+**Purpose**: Manages warehouse product catalog with inventory integration  
 **Cloud Provider**: Google Cloud Platform  
 **Platform**: Cloud Run (serverless containers)  
 **Region**: europe-west1  
@@ -220,16 +220,16 @@ All VM services run Node.js applications on port 8080 with RESTful APIs.
 | Method | Endpoint | Description | Request Body | Response |
 |--------|----------|-------------|--------------|----------|
 | GET | `/health` | Health check endpoint | None | Service status |
-| GET | `/food` | List food items with inventory check | None | Food items + inventory data |
-| GET | `/food/:id` | Get specific food item | None | Food object |
-| POST | `/food` | Add new food item | `{"name": "string", "category": "string", "price": number, "available": boolean}` | Created food object |
-| PUT | `/food/:id` | Update food item | `{"name": "string", "category": "string", "price": number, "available": boolean}` | Updated food object |
-| DELETE | `/food/:id` | Delete food item | None | Success message |
+| GET | `/warehouse` | List warehouse items with inventory check | None | Warehouse items + inventory data |
+| GET | `/warehouse/:id` | Get specific warehouse item | None | Warehouse object |
+| POST | `/warehouse` | Add new warehouse item | `{"name": "string", "category": "string", "price": number, "available": boolean}` | Created warehouse object |
+| PUT | `/warehouse/:id` | Update warehouse item | `{"name": "string", "category": "string", "price": number, "available": boolean}` | Updated warehouse object |
+| DELETE | `/warehouse/:id` | Delete warehouse item | None | Success message |
 
-**Sample Response** (GET `/food`):
+**Sample Response** (GET `/warehouse`):
 ```json
 {
-  "foodItems": [
+  "warehouseItems": [
     { "id": 1, "name": "Pizza Margherita", "category": "Italian", "price": 12.99 }
   ],
   "inventoryCheck": {
@@ -319,7 +319,7 @@ Terraform state is stored remotely for:
 - `crm.tf` - CRM service infrastructure and VPC peerings
 - `accounting.tf` - Accounting Cloud Run service and VPC connector
 - `inventory.tf` - Inventory service with PSC configuration
-- `food.tf` - Food service Cloud Run configuration
+- `warehouse.tf` - Warehouse service Cloud Run configuration
 
 ### Required Variables
 
@@ -426,9 +426,9 @@ gcp/
 ├── main.tf             # Shared Terraform, provider, and backend configuration
 ├── crm.tf              # CRM service (VM in asia-east1)
 ├── inventory.tf        # Inventory service (VM with private IP + PSC)
-├── food.tf             # Food service (Cloud Run with Direct VPC Egress)
+├── warehouse.tf             # Warehouse service (Cloud Run with Direct VPC Egress)
 ├── accounting.tf       # Accounting service (Cloud Run with VPC Connector)
-├── food-service/       # Food service application code
+├── warehouse-service/       # Warehouse service application code
 ├── accounting-service/ # Accounting service application code
 └── terraform.tfvars    # Your project configuration (not in Git)
 ```
@@ -456,10 +456,10 @@ terraform apply
 - `inventory_vm_private_ip`: Inventory VM private IP (europe-west1, no external access)
 - `inventory_psc_endpoint_ip`: PSC endpoint to access inventory
 
-#### Step 2: Build and deploy Food Service (Cloud Run)
+#### Step 2: Build and deploy Warehouse Service (Cloud Run)
 
 ```bash
-cd gcp/food-service/
+cd gcp/warehouse-service/
 
 # Build and push Docker image
 ./build.sh
@@ -468,14 +468,14 @@ cd gcp/food-service/
 gcloud builds submit --config=cloudbuild.yaml \
   --project=your-project-id
 
-# Deploy with Terraform (already configured in food.tf)
+# Deploy with Terraform (already configured in warehouse.tf)
 cd ..
 terraform apply
 ```
 
-**Food Service Outputs**:
-- `food_service_url`: Cloud Run service URL
-- `food_vpc_config`: VPC egress configuration details
+**Warehouse Service Outputs**:
+- `warehouse_service_url`: Cloud Run service URL
+- `warehouse_vpc_config`: VPC egress configuration details
 
 #### Step 3: Build and deploy Accounting Service (Cloud Run)
 
@@ -504,7 +504,7 @@ terraform apply
 cd gcp/
 
 # Build both Cloud Run services first
-cd food-service && ./build.sh && cd ..
+cd warehouse-service && ./build.sh && cd ..
 cd accounting-service && ./build.sh && cd ..
 
 # Deploy everything with Terraform
@@ -572,32 +572,32 @@ curl -X PUT http://$INVENTORY_PSC_IP:8080/inventory/OLJCESPC7Z \
   -d '{"stockLevel":50}'
 ```
 
-**Test GCP Food Service** (Cloud Run with inventory integration):
+**Test GCP Warehouse Service** (Cloud Run with inventory integration):
 ```bash
-# Get food service URL
-FOOD_URL=$(terraform output -raw food_service_url)
+# Get warehouse service URL
+WAREHOUSE_URL=$(terraform output -raw warehouse_service_url)
 
 # Health check
-curl $FOOD_URL/health
+curl $WAREHOUSE_URL/health
 
-# List food items (includes inventory check)
-curl $FOOD_URL/food
+# List warehouse items (includes inventory check)
+curl $WAREHOUSE_URL/warehouse
 
-# Get specific food item
-curl $FOOD_URL/food/1
+# Get specific warehouse item
+curl $WAREHOUSE_URL/warehouse/1
 
-# Add food item
-curl -X POST $FOOD_URL/food \
+# Add warehouse item
+curl -X POST $WAREHOUSE_URL/warehouse \
   -H "Content-Type: application/json" \
   -d '{"name":"Caesar Salad","category":"Salad","price":8.99,"available":true}'
 
-# Update food item
-curl -X PUT $FOOD_URL/food/1 \
+# Update warehouse item
+curl -X PUT $WAREHOUSE_URL/warehouse/1 \
   -H "Content-Type: application/json" \
   -d '{"name":"Margherita Pizza","category":"Italian","price":14.99,"available":true}'
 
-# Delete food item
-curl -X DELETE $FOOD_URL/food/1
+# Delete warehouse item
+curl -X DELETE $WAREHOUSE_URL/warehouse/1
 ```
 
 **Test GCP Accounting Service** (Cloud Run with CRM integration):
@@ -639,7 +639,7 @@ curl -X DELETE $ACCOUNTING_URL/transactions/1
 - **CRM, Inventory**: ~$5-8/month each if not in free tier
 
 ### GCP Cloud Run (Serverless)
-- **Food & Accounting Services**: Pay-per-request pricing
+- **Warehouse & Accounting Services**: Pay-per-request pricing
   - First 2 million requests free per month
   - $0.40 per million requests after that
   - CPU/Memory only charged during request processing
@@ -757,7 +757,7 @@ These services create a complete multicloud ecommerce platform:
     │         │           │              │
     ▼         ▼           ▼              ▼
 ┌────────┐ ┌─────────┐ ┌──────────┐ ┌──────────┐
-│  Food  │ │Accounting│ │ Other    │ │Analytics │
+│  Warehouse  │ │Accounting│ │ Other    │ │Analytics │
 │Service │ │ Service │ │ Services │ │ Service  │
 │(Cloud  │ │(Cloud   │ │          │ │  (Azure) │
 │ Run)   │ │  Run)   │ │          │ │          │
@@ -777,8 +777,8 @@ These services create a complete multicloud ecommerce platform:
 
 ### Integration Flow
 
-1. **Customer browses catalog** → Food service provides product data
-2. **Check inventory** → Food service calls Inventory service (Direct VPC Egress)
+1. **Customer browses catalog** → Warehouse service provides product data
+2. **Check inventory** → Warehouse service calls Inventory service (Direct VPC Egress)
 3. **Customer checkout** → Checkout service orchestrates the flow
 4. **Record transaction** → Accounting service saves transaction + fetches CRM data (VPC Connector)
 5. **Track metrics** → Analytics service records performance data
@@ -788,22 +788,22 @@ These services create a complete multicloud ecommerce platform:
 
 | Source Service | Target Service | Connection Type | Purpose |
 |----------------|----------------|-----------------|---------|
-| Checkout | Food Service | Public HTTPS | Get food catalog |
+| Checkout | Warehouse Service | Public HTTPS | Get warehouse catalog |
 | Checkout | Accounting Service | Public HTTPS | Record transactions |
-| Food Service | Inventory Service | Direct VPC Egress | Check stock levels |
+| Warehouse Service | Inventory Service | Direct VPC Egress | Check stock levels |
 | Accounting Service | CRM Service | VPC Connector | Get customer data |
 | Other VPCs | Inventory Service | Private Service Connect | Stock management |
 
 ### Example: Complete Order Flow
 
 ```bash
-# 1. Customer checks food menu
-curl https://food-service-url/food
+# 1. Customer checks warehouse menu
+curl https://warehouse-service-url/warehouse
 # Response includes inventory check from Inventory service
 
 # 2. Customer places order via checkout
 # Checkout service internally calls:
-#   - Food service (validate items)
+#   - Warehouse service (validate items)
 #   - Accounting service (create transaction)
 
 # 3. Accounting service records transaction

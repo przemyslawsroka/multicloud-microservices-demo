@@ -8,8 +8,8 @@ app.use(express.json());
 // Configuration for inventory service
 const INVENTORY_SERVICE_URL = process.env.INVENTORY_SERVICE_URL || '';
 
-// In-memory data store with hardcoded food items
-let foodItems = [
+// In-memory data store with hardcoded warehouse items
+let warehouseItems = [
   { id: 1, name: 'Pizza Margherita', category: 'Italian', price: 12.99, available: true },
   { id: 2, name: 'Sushi Roll', category: 'Japanese', price: 15.99, available: true },
   { id: 3, name: 'Burger Deluxe', category: 'American', price: 10.99, available: true },
@@ -46,19 +46,19 @@ async function checkInventory() {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', service: 'food-service' });
+  res.status(200).json({ status: 'healthy', service: 'warehouse-service' });
 });
 
-// GET endpoint to list all food items (with inventory check)
-app.get('/food', async (req, res) => {
-  console.log('GET /food - Returning food items list');
+// GET endpoint to list all warehouse items (with inventory check)
+app.get('/warehouse', async (req, res) => {
+  console.log('GET /warehouse - Returning warehouse items list');
   
   // Call inventory service
   const inventoryData = await checkInventory();
   
-  // Prepare response with food items and inventory data
+  // Prepare response with warehouse items and inventory data
   const response = {
-    foodItems: foodItems,
+    warehouseItems: warehouseItems,
     inventoryCheck: inventoryData ? {
       checked: true,
       inventoryItems: inventoryData,
@@ -72,26 +72,26 @@ app.get('/food', async (req, res) => {
   res.status(200).json(response);
 });
 
-// GET endpoint to get a specific food item by ID
-app.get('/food/:id', (req, res) => {
+// GET endpoint to get a specific warehouse item by ID
+app.get('/warehouse/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const item = foodItems.find(f => f.id === id);
+  const item = warehouseItems.find(f => f.id === id);
   
   if (!item) {
-    console.log(`GET /food/${id} - Not found`);
-    return res.status(404).json({ error: 'Food item not found' });
+    console.log(`GET /warehouse/${id} - Not found`);
+    return res.status(404).json({ error: 'Warehouse item not found' });
   }
   
-  console.log(`GET /food/${id} - Returning item: ${item.name}`);
+  console.log(`GET /warehouse/${id} - Returning item: ${item.name}`);
   res.status(200).json(item);
 });
 
-// POST endpoint to add a new food item
-app.post('/food', (req, res) => {
+// POST endpoint to add a new warehouse item
+app.post('/warehouse', (req, res) => {
   const { name, category, price, available } = req.body;
 
   if (!name || !category || typeof price !== 'number') {
-    console.log('POST /food - Failed: Missing required fields');
+    console.log('POST /warehouse - Failed: Missing required fields');
     return res.status(400).json({ error: 'Name, category, and price are required' });
   }
 
@@ -103,59 +103,59 @@ app.post('/food', (req, res) => {
     available: available !== undefined ? available : true
   };
   
-  foodItems.push(newItem);
+  warehouseItems.push(newItem);
   
   // Cleanup: Keep only the 20 most recent items
-  if (foodItems.length > 20) {
-    const removedCount = foodItems.length - 20;
-    foodItems = foodItems.slice(-20);
-    console.log(`POST /food - Cleaned up ${removedCount} old item(s), keeping 20 most recent`);
+  if (warehouseItems.length > 20) {
+    const removedCount = warehouseItems.length - 20;
+    warehouseItems = warehouseItems.slice(-20);
+    console.log(`POST /warehouse - Cleaned up ${removedCount} old item(s), keeping 20 most recent`);
   }
   
-  console.log(`POST /food - Added new item: ${name}. Total: ${foodItems.length}`);
+  console.log(`POST /warehouse - Added new item: ${name}. Total: ${warehouseItems.length}`);
   res.status(201).json(newItem);
 });
 
-// PUT endpoint to update a food item
-app.put('/food/:id', (req, res) => {
+// PUT endpoint to update a warehouse item
+app.put('/warehouse/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const itemIndex = foodItems.findIndex(f => f.id === id);
+  const itemIndex = warehouseItems.findIndex(f => f.id === id);
   
   if (itemIndex === -1) {
-    console.log(`PUT /food/${id} - Not found`);
-    return res.status(404).json({ error: 'Food item not found' });
+    console.log(`PUT /warehouse/${id} - Not found`);
+    return res.status(404).json({ error: 'Warehouse item not found' });
   }
   
   const { name, category, price, available } = req.body;
   const updatedItem = {
-    ...foodItems[itemIndex],
+    ...warehouseItems[itemIndex],
     ...(name && { name }),
     ...(category && { category }),
     ...(price !== undefined && { price }),
     ...(available !== undefined && { available })
   };
   
-  foodItems[itemIndex] = updatedItem;
-  console.log(`PUT /food/${id} - Updated item: ${updatedItem.name}`);
+  warehouseItems[itemIndex] = updatedItem;
+  console.log(`PUT /warehouse/${id} - Updated item: ${updatedItem.name}`);
   res.status(200).json(updatedItem);
 });
 
-// DELETE endpoint to remove a food item
-app.delete('/food/:id', (req, res) => {
+// DELETE endpoint to remove a warehouse item
+app.delete('/warehouse/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const itemIndex = foodItems.findIndex(f => f.id === id);
+  const itemIndex = warehouseItems.findIndex(f => f.id === id);
   
   if (itemIndex === -1) {
-    console.log(`DELETE /food/${id} - Not found`);
-    return res.status(404).json({ error: 'Food item not found' });
+    console.log(`DELETE /warehouse/${id} - Not found`);
+    return res.status(404).json({ error: 'Warehouse item not found' });
   }
   
-  const deletedItem = foodItems.splice(itemIndex, 1)[0];
-  console.log(`DELETE /food/${id} - Deleted item: ${deletedItem.name}`);
+  const deletedItem = warehouseItems.splice(itemIndex, 1)[0];
+  console.log(`DELETE /warehouse/${id} - Deleted item: ${deletedItem.name}`);
   res.status(200).json({ message: 'Item deleted', item: deletedItem });
 });
 
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Food service listening on port ${port}`);
+  console.log(`Warehouse service listening on port ${port}`);
 });
 

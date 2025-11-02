@@ -1,10 +1,10 @@
-# Food Service
+# Warehouse Service
 
-A simple REST API service for managing food items, designed to run on Google Cloud Run. This service integrates with the Inventory Service to check inventory status when listing food items.
+A simple REST API service for managing warehouse items, designed to run on Google Cloud Run. This service integrates with the Inventory Service to check inventory status when listing warehouse items.
 
 ## Features
 
-- RESTful API for food item management
+- RESTful API for warehouse item management
 - Automatic inventory checking via Inventory Service integration
 - Cloud Run deployment ready
 - Container-based deployment with Cloud Build
@@ -12,11 +12,11 @@ A simple REST API service for managing food items, designed to run on Google Clo
 ## API Endpoints
 
 - `GET /health` - Health check endpoint
-- `GET /food` - List all food items (also calls Inventory Service to check stock)
-- `GET /food/:id` - Get a specific food item
-- `POST /food` - Add a new food item
-- `PUT /food/:id` - Update a food item
-- `DELETE /food/:id` - Delete a food item
+- `GET /warehouse` - List all warehouse items (also calls Inventory Service to check stock)
+- `GET /warehouse/:id` - Get a specific warehouse item
+- `POST /warehouse` - Add a new warehouse item
+- `PUT /warehouse/:id` - Update a warehouse item
+- `DELETE /warehouse/:id` - Delete a warehouse item
 
 ## Environment Variables
 
@@ -47,10 +47,10 @@ npm start
 
 1. Create an Artifact Registry repository:
 ```bash
-gcloud artifacts repositories create food-repo \
+gcloud artifacts repositories create warehouse-repo \
   --repository-format=docker \
   --location=europe-west1 \
-  --description="Food service container images"
+  --description="Warehouse service container images"
 ```
 
 2. Enable required APIs:
@@ -62,15 +62,15 @@ gcloud services enable artifactregistry.googleapis.com
 
 ### Build and Push to Artifact Registry
 
-From the `multicloud/gcp/food-service` directory:
+From the `multicloud/gcp/warehouse-service` directory:
 
 ```bash
 # Submit build to Cloud Build
 gcloud builds submit --config=cloudbuild.yaml
 
 # Or build manually
-docker build -t europe-west1-docker.pkg.dev/PROJECT_ID/food-repo/food-service:latest .
-docker push europe-west1-docker.pkg.dev/PROJECT_ID/food-repo/food-service:latest
+docker build -t europe-west1-docker.pkg.dev/PROJECT_ID/warehouse-repo/warehouse-service:latest .
+docker push europe-west1-docker.pkg.dev/PROJECT_ID/warehouse-repo/warehouse-service:latest
 ```
 
 ### Deploy with Terraform

@@ -31,7 +31,7 @@ variable "peering_vpc_network" {
 }
 
 variable "inventory_service_url" {
-  description = "URL of the inventory service for food service to call"
+  description = "URL of the inventory service for warehouse service to call"
   type        = string
   default     = ""
 }

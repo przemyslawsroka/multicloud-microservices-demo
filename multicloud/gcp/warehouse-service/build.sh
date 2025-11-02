@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Food Service Build and Deploy Script
-# This script builds and pushes the food service container to Artifact Registry
+# Warehouse Service Build and Deploy Script
+# This script builds and pushes the warehouse service container to Artifact Registry
 
 set -e
 
@@ -23,12 +23,12 @@ echo -e "${GREEN}Using GCP Project: ${PROJECT_ID}${NC}"
 
 # Check if Artifact Registry repo exists
 echo -e "${YELLOW}Checking if Artifact Registry repository exists...${NC}"
-if ! gcloud artifacts repositories describe food-repo --location=europe-west1 --project=${PROJECT_ID} &>/dev/null; then
+if ! gcloud artifacts repositories describe warehouse-repo --location=europe-west1 --project=${PROJECT_ID} &>/dev/null; then
     echo -e "${YELLOW}Creating Artifact Registry repository...${NC}"
-    gcloud artifacts repositories create food-repo \
+    gcloud artifacts repositories create warehouse-repo \
         --repository-format=docker \
         --location=europe-west1 \
-        --description="Food service container images" \
+        --description="Warehouse service container images" \
         --project=${PROJECT_ID}
     echo -e "${GREEN}Repository created successfully${NC}"
 else
@@ -46,7 +46,7 @@ echo -e "${YELLOW}Building and pushing container image...${NC}"
 gcloud builds submit --config=cloudbuild.yaml --project=${PROJECT_ID}
 
 echo -e "${GREEN}Build completed successfully!${NC}"
-echo -e "${GREEN}Image available at: europe-west1-docker.pkg.dev/${PROJECT_ID}/food-repo/food-service:latest${NC}"
+echo -e "${GREEN}Image available at: europe-west1-docker.pkg.dev/${PROJECT_ID}/warehouse-repo/warehouse-service:latest${NC}"
 echo ""
 echo -e "${YELLOW}To deploy with Terraform:${NC}"
 echo "  cd ../  # Go to multicloud/gcp directory"

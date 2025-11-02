@@ -107,7 +107,7 @@ This service uses a **VPC Connector** (not Direct VPC egress) to connect to the 
   - Separate IP range from target VPC
   - Good for occasional access
   
-- **Direct VPC egress**: Cloud Run instances in VPC subnet (food service uses this)
+- **Direct VPC egress**: Cloud Run instances in VPC subnet (warehouse service uses this)
   - Instances get IPs from VPC subnet
   - Better for frequent internal communication
   - Lower latency

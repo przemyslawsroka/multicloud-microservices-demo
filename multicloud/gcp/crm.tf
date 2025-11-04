@@ -144,7 +144,7 @@ resource "google_compute_firewall" "allow_crm_http" {
   }
 
   target_tags   = ["crm-server"]
-  source_ranges = ["10.128.0.0/9", "10.3.0.0/24"] # Online-boutique-vpc VPC and CRM VPC ranges
+  source_ranges = ["10.69.128.0/17", "10.128.0.0/9", "10.3.0.0/24"] # GKE pod range, Online-boutique-vpc VPC, and CRM VPC ranges
 }
 
 # 4. Create CRM Backend VM instance with static IP

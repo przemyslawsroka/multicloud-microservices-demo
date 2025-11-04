@@ -513,8 +513,8 @@ func (cs *checkoutService) checkInventory(ctx context.Context, items []*pb.CartI
 		return nil
 	}
 
-	// GET inventory status
-	_, err := cs.getJSON(ctx, cs.gcpInventoryURL+"/inventory")
+	// GET inventory status (service returns array, just check if reachable)
+	err := cs.checkHTTP(ctx, cs.gcpInventoryURL+"/inventory")
 	if err != nil {
 		log.Warnf("Failed to check inventory: %v", err)
 		return err
@@ -542,8 +542,8 @@ func (cs *checkoutService) checkFurniture(ctx context.Context) error {
 		return nil
 	}
 
-	// GET furniture list
-	_, err := cs.getJSON(ctx, cs.gcpFurnitureURL+"/furniture")
+	// GET furniture list (service returns array, just check if reachable)
+	err := cs.checkHTTP(ctx, cs.gcpFurnitureURL+"/furniture")
 	if err != nil {
 		log.Warnf("Failed to check furniture: %v", err)
 		return err
@@ -685,4 +685,29 @@ func (cs *checkoutService) getJSON(ctx context.Context, url string) (map[string]
 
 	log.Debugf("GET %s succeeded with status %d", url, resp.StatusCode)
 	return result, nil
+}
+
+// Helper method to check HTTP endpoint (no JSON decoding)
+func (cs *checkoutService) checkHTTP(ctx context.Context, url string) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %v", err)
+	}
+
+	resp, err := cs.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Consume the response body
+	io.Copy(io.Discard, resp.Body)
+	
+	log.Debugf("GET %s succeeded with status %d", url, resp.StatusCode)
+	return nil
 }

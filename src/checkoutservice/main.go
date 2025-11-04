@@ -90,7 +90,6 @@ type checkoutService struct {
 	httpClient *http.Client
 
 	// Multicloud service URLs
-	awsAccountingURL    string
 	azureAnalyticsURL   string
 	gcpCrmURL           string
 	gcpInventoryURL     string
@@ -142,7 +141,6 @@ func main() {
 	}
 
 	// Map multicloud service URLs (optional, with defaults)
-	svc.awsAccountingURL = os.Getenv("AWS_ACCOUNTING_URL")
 	svc.azureAnalyticsURL = os.Getenv("AZURE_ANALYTICS_URL")
 	svc.gcpCrmURL = os.Getenv("GCP_CRM_URL")
 	svc.gcpInventoryURL = os.Getenv("GCP_INVENTORY_URL")
@@ -150,8 +148,8 @@ func main() {
 	svc.gcpWarehouseURL = os.Getenv("GCP_WAREHOUSE_URL")
 	svc.gcpAccountingURL = os.Getenv("GCP_ACCOUNTING_URL")
 	
-	log.Infof("Multicloud services configured: awsAccounting=%q azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q gcpWarehouse=%q gcpAccounting=%q",
-		svc.awsAccountingURL, svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL, svc.gcpWarehouseURL, svc.gcpAccountingURL)
+	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q gcpWarehouse=%q gcpAccounting=%q",
+		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL, svc.gcpWarehouseURL, svc.gcpAccountingURL)
 
 	log.Infof("service config: %+v", svc)
 
@@ -319,12 +317,6 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	}
 	log.Infof("payment went through (transaction_id: %s)", txID)
 
-	// Process transaction in accounting system
-	if err := cs.processTransaction(ctx, prep.orderItems); err != nil {
-		log.Warnf("Failed to record transaction in accounting system: %v", err)
-		// Don't fail the order, just log
-	}
-
 	// Manage customer in CRM
 	if err := cs.manageCustomer(ctx, req.Email, req.Address); err != nil {
 		log.Warnf("Failed to update CRM: %v", err)
@@ -469,30 +461,6 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 		return "", fmt.Errorf("shipment failed: %+v", err)
 	}
 	return resp.GetTrackingId(), nil
-}
-
-// processTransaction calls AWS Accounting Service
-func (cs *checkoutService) processTransaction(ctx context.Context, items []*pb.OrderItem) error {
-	if cs.awsAccountingURL == "" {
-		log.Debug("AWS Accounting URL not configured, skipping")
-		return nil
-	}
-
-	// Calculate total amount from items
-	var totalAmount float64
-	for _, item := range items {
-		price := float64(item.Cost.Units) + float64(item.Cost.Nanos)/1e9
-		totalAmount += price * float64(item.Item.Quantity)
-	}
-
-	transactionData := map[string]interface{}{
-		"item":  "Online Purchase",
-		"price": totalAmount,
-		"date":  time.Now().Format("2006-01-02"),
-	}
-
-	log.Infof("Recording transaction in AWS Accounting: amount=%.2f", totalAmount)
-	return cs.postJSON(ctx, cs.awsAccountingURL+"/transactions", transactionData)
 }
 
 // recordMetrics calls Azure Analytics Service

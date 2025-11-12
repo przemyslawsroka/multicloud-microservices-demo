@@ -4,7 +4,7 @@ This document describes the log exclusion filters configured to eliminate benign
 
 ## Summary
 
-**7 exclusion filters** have been configured to filter out benign GKE system operations and transient network issues that don't impact application functionality.
+**6 exclusion filters** have been configured to filter out benign GKE system operations that don't impact application functionality.
 
 ## Exclusion Filters
 
@@ -78,16 +78,8 @@ Filter: logName:"GCEGuestAgent"
         textPayload=""
 ```
 
-### 7. Transient 503 Service Unavailable Errors
-**Name:** `azure-analytics-transient-503`
-**Purpose:** Transient HTTP 503 errors to external services
-**Why it's safe to exclude:** Application implements retry logic and these requests eventually succeed. Verified that application functionality is working correctly (checkout service logs show "success=true").
-
-```
-Filter: logName:"client-accesslog-stackdriver"
-        severity="ERROR"
-        httpRequest.status=503
-```
+### 7. ~~Transient 503 Service Unavailable Errors~~ (REMOVED)
+**Status:** This filter has been **removed per user request**. HTTP 503 errors are now **visible in logs** for monitoring and debugging purposes.
 
 ## Management Commands
 

@@ -26,6 +26,8 @@ spec:
     metadata:
       labels:
         app: checkoutservice
+      annotations:
+        proxy.istio.io/config: '{ "holdApplicationUntilProxyStarts": true }'
     spec:
       serviceAccountName: checkoutservice
       securityContext:
@@ -42,7 +44,7 @@ spec:
                 - ALL
             privileged: false
             readOnlyRootFilesystem: true
-          image: us-central1-docker.pkg.dev/google-samples/microservices-demo/checkoutservice:v0.10.4
+          image: gcr.io/network-obs-demo/checkoutservice:latest
           ports:
           - containerPort: 5050
           readinessProbe:
@@ -66,6 +68,19 @@ spec:
             value: "currencyservice:7000"
           - name: CART_SERVICE_ADDR
             value: "cartservice:7070"
+          # Multicloud service URLs - actual production endpoints
+          - name: AZURE_ANALYTICS_URL
+            value: "http://10.2.1.5:8080"
+          - name: GCP_CRM_URL
+            value: "http://10.3.0.2:8080"
+          - name: GCP_INVENTORY_URL
+            value: "http://10.132.0.3:8080"
+          - name: GCP_FURNITURE_URL
+            value: "http://10.5.0.2:8080"
+          - name: GCP_WAREHOUSE_URL
+            value: "https://warehouse-api-service-985429063844.europe-west1.run.app"
+          - name: GCP_ACCOUNTING_URL
+            value: "https://accounting-api-service-985429063844.us-central1.run.app"
           resources:
             requests:
               cpu: 100m

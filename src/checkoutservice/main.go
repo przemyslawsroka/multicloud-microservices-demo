@@ -15,9 +15,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"os"
 	"time"
 
@@ -83,6 +87,17 @@ type checkoutService struct {
 
 	paymentSvcAddr string
 	paymentSvcConn *grpc.ClientConn
+
+	// HTTP client for REST multicloud services
+	httpClient *http.Client
+
+	// Multicloud service URLs
+	azureAnalyticsURL   string
+	gcpCrmURL           string
+	gcpInventoryURL     string
+	gcpFurnitureURL     string
+	gcpWarehouseURL     string
+	gcpAccountingURL    string
 }
 
 func main() {
@@ -121,6 +136,22 @@ func main() {
 	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
 	mustConnGRPC(ctx, &svc.emailSvcConn, svc.emailSvcAddr)
 	mustConnGRPC(ctx, &svc.paymentSvcConn, svc.paymentSvcAddr)
+
+	// Initialize HTTP client with timeout for multicloud services
+	svc.httpClient = &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	// Map multicloud service URLs (optional, with defaults)
+	svc.azureAnalyticsURL = os.Getenv("AZURE_ANALYTICS_URL")
+	svc.gcpCrmURL = os.Getenv("GCP_CRM_URL")
+	svc.gcpInventoryURL = os.Getenv("GCP_INVENTORY_URL")
+	svc.gcpFurnitureURL = os.Getenv("GCP_FURNITURE_URL")
+	svc.gcpWarehouseURL = os.Getenv("GCP_WAREHOUSE_URL")
+	svc.gcpAccountingURL = os.Getenv("GCP_ACCOUNTING_URL")
+	
+	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q gcpWarehouse=%q gcpAccounting=%q",
+		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL, svc.gcpWarehouseURL, svc.gcpAccountingURL)
 
 	log.Infof("service config: %+v", svc)
 
@@ -230,6 +261,14 @@ func (cs *checkoutService) Watch(req *healthpb.HealthCheckRequest, ws healthpb.H
 func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (*pb.PlaceOrderResponse, error) {
 	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
 
+	startTime := time.Now()
+	var success bool
+	defer func() {
+		// Record metrics at the end of the request
+		duration := time.Since(startTime)
+		_ = cs.recordMetrics(context.Background(), duration, success)
+	}()
+
 	orderID, err := uuid.NewUUID()
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate order uuid")
@@ -238,6 +277,30 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	prep, err := cs.prepareOrderItemsAndShippingQuoteFromCart(ctx, req.UserId, req.UserCurrency, req.Address)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	// Check inventory before proceeding
+	if err := cs.checkInventory(ctx, prep.cartItems); err != nil {
+		log.Warnf("Inventory check failed: %v", err)
+		// Don't fail the order, just log
+	}
+
+	// Check furniture service
+	if err := cs.checkFurniture(ctx); err != nil {
+		log.Warnf("Furniture check failed: %v", err)
+		// Don't fail the order, just log
+	}
+
+	// Check warehouse service
+	if err := cs.checkWarehouse(ctx); err != nil {
+		log.Warnf("Warehouse service check failed: %v", err)
+		// Don't fail the order, just log
+	}
+
+	// Check accounting service
+	if err := cs.checkAccounting(ctx, prep.cartItems); err != nil {
+		log.Warnf("Accounting service check failed: %v", err)
+		// Don't fail the order, just log
 	}
 
 	total := pb.Money{CurrencyCode: req.UserCurrency,
@@ -254,6 +317,12 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		return nil, status.Errorf(codes.Internal, "failed to charge card: %+v", err)
 	}
 	log.Infof("payment went through (transaction_id: %s)", txID)
+
+	// Manage customer in CRM
+	if err := cs.manageCustomer(ctx, req.Email, req.Address); err != nil {
+		log.Warnf("Failed to update CRM: %v", err)
+		// Don't fail the order, just log
+	}
 
 	shippingTrackingID, err := cs.shipOrder(ctx, req.Address, prep.cartItems)
 	if err != nil {
@@ -275,6 +344,8 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	} else {
 		log.Infof("order confirmation email sent to %q", req.Email)
 	}
+
+	success = true
 	resp := &pb.PlaceOrderResponse{Order: orderResult}
 	return resp, nil
 }
@@ -391,4 +462,253 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 		return "", fmt.Errorf("shipment failed: %+v", err)
 	}
 	return resp.GetTrackingId(), nil
+}
+
+// recordMetrics calls Azure Analytics Service
+func (cs *checkoutService) recordMetrics(ctx context.Context, duration time.Duration, success bool) error {
+	if cs.azureAnalyticsURL == "" {
+		log.Debug("Azure Analytics URL not configured, skipping")
+		return nil
+	}
+
+	metricData := map[string]interface{}{
+		"transactionType": "checkout",
+		"durationMs":      duration.Milliseconds(),
+		"success":         success,
+	}
+
+	log.Infof("Recording metrics in Azure Analytics: duration=%v success=%v", duration, success)
+	return cs.postJSON(ctx, cs.azureAnalyticsURL+"/metrics", metricData)
+}
+
+// manageCustomer calls GCP CRM Service
+func (cs *checkoutService) manageCustomer(ctx context.Context, email string, address *pb.Address) error {
+	if cs.gcpCrmURL == "" {
+		log.Debug("GCP CRM URL not configured, skipping")
+		return nil
+	}
+
+	// Extract name from email or use address info
+	name := "Customer"
+	if len(email) > 0 {
+		name = email
+	}
+	surname := "User"
+	if address != nil && address.StreetAddress != "" {
+		surname = "Customer"
+	}
+
+	customerData := map[string]interface{}{
+		"name":    name,
+		"surname": surname,
+	}
+
+	log.Infof("Managing customer in GCP CRM: email=%s", email)
+	return cs.postJSON(ctx, cs.gcpCrmURL+"/customers", customerData)
+}
+
+// checkInventory calls GCP Inventory Service via PSC
+func (cs *checkoutService) checkInventory(ctx context.Context, items []*pb.CartItem) error {
+	if cs.gcpInventoryURL == "" {
+		log.Debug("GCP Inventory URL not configured, skipping")
+		return nil
+	}
+
+	// GET inventory status (service returns array, just check if reachable)
+	err := cs.checkHTTP(ctx, cs.gcpInventoryURL+"/inventory")
+	if err != nil {
+		log.Warnf("Failed to check inventory: %v", err)
+		return err
+	}
+
+	log.Infof("Checked inventory for %d items", len(items))
+	// Optionally POST inventory updates for each item
+	for _, item := range items {
+		inventoryData := map[string]interface{}{
+			"name": "item",
+			"code": item.ProductId,
+		}
+		if err := cs.postJSON(ctx, cs.gcpInventoryURL+"/inventory", inventoryData); err != nil {
+			log.Warnf("Failed to update inventory for %s: %v", item.ProductId, err)
+		}
+	}
+
+	return nil
+}
+
+// checkFurniture calls GCP Furniture Service via HA VPN
+func (cs *checkoutService) checkFurniture(ctx context.Context) error {
+	if cs.gcpFurnitureURL == "" {
+		log.Debug("GCP Furniture URL not configured, skipping")
+		return nil
+	}
+
+	// GET furniture list (service returns array, just check if reachable)
+	err := cs.checkHTTP(ctx, cs.gcpFurnitureURL+"/furniture")
+	if err != nil {
+		log.Warnf("Failed to check furniture: %v", err)
+		return err
+	}
+
+	// POST sample furniture item
+	furnitureData := map[string]interface{}{
+		"name":  "sofa",
+		"brand": "ikea",
+	}
+
+	log.Infof("Checking furniture service")
+	return cs.postJSON(ctx, cs.gcpFurnitureURL+"/furniture", furnitureData)
+}
+
+// checkWarehouse calls GCP Warehouse Service on Cloud Run (which internally calls Inventory Service)
+func (cs *checkoutService) checkWarehouse(ctx context.Context) error {
+	if cs.gcpWarehouseURL == "" {
+		log.Debug("GCP Warehouse URL not configured, skipping")
+		return nil
+	}
+
+	// GET warehouse list - this will trigger the warehouse service to call inventory service
+	warehouseData, err := cs.getJSON(ctx, cs.gcpWarehouseURL+"/warehouse")
+	if err != nil {
+		log.Warnf("Failed to check warehouse service: %v", err)
+		return err
+	}
+
+	log.Infof("Successfully checked warehouse service, received data: %v", warehouseData)
+	
+	// Optionally POST a new warehouse item
+	newWarehouseItem := map[string]interface{}{
+		"name":      "Vintage Lamp",
+		"category":  "Lighting",
+		"price":     79.99,
+		"available": true,
+	}
+
+	if err := cs.postJSON(ctx, cs.gcpWarehouseURL+"/warehouse", newWarehouseItem); err != nil {
+		log.Warnf("Failed to add warehouse item: %v", err)
+		// Don't return error, just log
+	}
+
+	log.Infof("Warehouse service check completed successfully")
+	return nil
+}
+
+// checkAccounting calls GCP Accounting Service via VPC Connector (which internally calls CRM Service)
+func (cs *checkoutService) checkAccounting(ctx context.Context, items []*pb.CartItem) error {
+	if cs.gcpAccountingURL == "" {
+		log.Debug("GCP Accounting URL not configured, skipping")
+		return nil
+	}
+
+	// GET transactions list - this will trigger the accounting service to call CRM service
+	accountingData, err := cs.getJSON(ctx, cs.gcpAccountingURL+"/transactions")
+	if err != nil {
+		log.Warnf("Failed to check accounting service: %v", err)
+		return err
+	}
+
+	log.Infof("Successfully checked accounting service, received data: %v", accountingData)
+	
+	// Optionally POST a new transaction for this order
+	// Calculate total price from cart items
+	var totalPrice float64
+	for range items {
+		// Assuming we have product info, otherwise use a placeholder
+		totalPrice += 10.00 // Placeholder price per item
+	}
+
+	newTransaction := map[string]interface{}{
+		"item":     "Online Order",
+		"price":    totalPrice,
+		"date":     "2025-10-29",
+		"customer": "Online Customer",
+	}
+
+	if err := cs.postJSON(ctx, cs.gcpAccountingURL+"/transactions", newTransaction); err != nil {
+		log.Warnf("Failed to add transaction to accounting: %v", err)
+		// Don't return error, just log
+	}
+
+	log.Infof("Accounting service check completed successfully")
+	return nil
+}
+
+// Helper method to POST JSON
+func (cs *checkoutService) postJSON(ctx context.Context, url string, data map[string]interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := cs.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	log.Debugf("POST %s succeeded with status %d", url, resp.StatusCode)
+	return nil
+}
+
+// Helper method to GET JSON
+func (cs *checkoutService) getJSON(ctx context.Context, url string) (map[string]interface{}, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %v", err)
+	}
+
+	resp, err := cs.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %v", err)
+	}
+
+	log.Debugf("GET %s succeeded with status %d", url, resp.StatusCode)
+	return result, nil
+}
+
+// Helper method to check HTTP endpoint (no JSON decoding)
+func (cs *checkoutService) checkHTTP(ctx context.Context, url string) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %v", err)
+	}
+
+	resp, err := cs.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Consume the response body
+	io.Copy(io.Discard, resp.Body)
+	
+	log.Debugf("GET %s succeeded with status %d", url, resp.StatusCode)
+	return nil
 }

@@ -21,6 +21,7 @@ The architectural overview, system blueprints, and detailed networking diagrams 
 1. **[Business View](./BUSINESS_VIEW.md)** - Logical description of enterprise IT systems.
 2. **[Technical View](./TECHNICAL_VIEW.md)** - System specifications, API communication, and integration patterns.
 3. **[Networking View](./NETWORKING_VIEW.md)** - Specification of the multicloud networking topologies (Peering vs PSC vs Serverless Egress vs Interconnect).
+4. **[Deployment View](./DEPLOYMENT_VIEW.md)** - Global physical distribution and cross-region geographical topology.
 
 ## Deployment Instructions
 

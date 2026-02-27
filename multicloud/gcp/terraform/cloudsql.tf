@@ -5,6 +5,18 @@ resource "random_id" "db_name_suffix" {
   byte_length = 4
 }
 
+# Enable Cloud SQL Admin API
+resource "google_project_service" "sqladmin_api" {
+  service            = "sqladmin.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Enable Service Networking API
+resource "google_project_service" "servicenetworking_api" {
+  service            = "servicenetworking.googleapis.com"
+  disable_on_destroy = false
+}
+
 # 1. Create Cloud SQL MySQL Instance with PSC Enabled
 resource "google_sql_database_instance" "crm_db" {
   name             = "crm-db-instance-${random_id.db_name_suffix.hex}"
@@ -24,6 +36,11 @@ resource "google_sql_database_instance" "crm_db" {
       }
     }
   }
+
+  depends_on = [
+    google_project_service.sqladmin_api,
+    google_project_service.servicenetworking_api
+  ]
 }
 
 # 2. Database within the instance

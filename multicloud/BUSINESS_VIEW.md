@@ -26,13 +26,17 @@ These systems represent traditional enterprise workloads safeguarding the compan
 
 ### 2.3 Backend Operations
 Newly developed workflows utilizing dynamic, modernized infrastructure.
-*   **API Management (Apigee)**: The enterprise-grade gateway shielding the backend operations. It securely exposes and manages APIs for the OMS and other internal microservices, handling quotas, developer portals, and deep threat protection before traffic hits the backend logical units.
-*   **Order Management System (OMS)**: Secured tightly behind Apigee, this service assumes responsibility for the order's lifecycle the moment a checkout is confirmed. It orchestrates fulfillment routing, shipping updates, and returns via structured API endpoints.
+*   **Order Management System (OMS)**: Assumes responsibility for the order's lifecycle the moment a checkout is confirmed. It orchestrates fulfillment routing, shipping updates, and returns via internal event-driven architectures.
 *   **Warehouse Service**: Handles complex shipping logistics, parcel dispatching, and physical tracking.
 *   **Accounting Service**: Records financial ledgers, tax calculations, and revenue recognition for every sale.
 
-### 2.4 Risk & Compliance
+### 2.4 B2B Partner Integration
+External collaborations utilizing secure, public-facing developer APIs.
+*   **API Management (Apigee)**: The enterprise-grade public gateway exposing the company's B2B APIs to the outside world. It manages third-party developer portals, API key lifecycles, monetization, and strict quotas for external corporate partners.
+*   **Partner API Service**: Sitting securely behind Apigee, this service allows third-party logistics (3PL) providers to push shipping statuses natively, and permits bulk B2B resellers to programmatically retrieve active product catalogs.
+
+### 2.5 Risk & Compliance
 *   **Fraud Detection Engine**: A real-time risk analysis system remaining in Azure. It evaluates transaction metadata to compute risk scores, flag anomalous behavior, and prevent fraudulent orders before fulfillment.
 
-### 2.5 Enterprise Data Intelligence
+### 2.6 Enterprise Data Intelligence
 *   **Data Warehouse**: The primary enterprise data lake. It continuously aggregates telemetry, financial ledgers, logistics data, and user events from across the entire microservice ecosystem to drive executive business intelligence (BI) dashboards, generate compliance reports, and train predictive machine learning models.

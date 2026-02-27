@@ -22,12 +22,10 @@ The core challenge of this architecture is bridging modern serverless technologi
     - Once the synchronous validation clears, the Checkout Service commits the cart and publishes a deeply decoupled domain event: `OrderConfirmedEvent`.
     - *API Pattern*: gRPC/HTTP publishing to Pub/Sub topic spanning the entire application graph.
 
-### Phase 3: Order Lifecycle & Processing (Serverless Apigee Proxy)
-6.  **Event Broker $\rightarrow$ Apigee Gateway**: 
-    - The Pub/Sub Push Subscription explicitly targets the Apigee Gateway URL. Apigee intercepts the webhook, authenticates the GCP service account token, extracts quotas, and logs the API usage.
-7.  **Apigee Gateway $\rightarrow$ Order Management System (OMS)**: 
-    - Once Apigee policies successfully clear the payload, it acts as a reverse proxy, forwarding the event directly to the private REST API of the OMS (running securely on Cloud Run).
-8.  **OMS $\rightarrow$ Accounting (Cloud Run)**: 
+### Phase 3: Order Lifecycle & Processing (Serverless Scale-out)
+6.  **Event Broker $\rightarrow$ Order Management System (OMS - Cloud Run)**: 
+    - The OMS is triggered automatically via a Pub/Sub Push Subscription (Eventarc). It ingests the `OrderConfirmedEvent` payload.
+7.  **OMS $\rightarrow$ Accounting (Cloud Run)**: 
     - The OMS forwards financial payloads via synchronous POST to Accounting.
     - *API Pattern*: REST `POST /transactions`.
     - *Side-Effect Link*: The Accounting service simultaneously fetches billing data backward from the original **CRM Service (VM)** via synchronous GET.
@@ -35,9 +33,16 @@ The core challenge of this architecture is bridging modern serverless technologi
     - The OMS fires a fulfillment POST Request to the Warehouse APIs.
     - *Side-Effect Link*: The Warehouse service updates stock ledgers backward on the **Inventory Service (VM)** via `PUT /inventory/{productId}`.
 
-### Phase 4: Big Data Intelligence
-9.  **Event Broker $\rightarrow$ Data Warehouse (BigQuery)**: 
-    - A direct BigQuery Pub/Sub Subscription ingests all `OrderConfirmedEvent` logs purely asynchronously, requiring zero compute overhead from the GKE cluster.
+### Phase 4: B2B Integration (Public APIs)
+9.  **External B2B Partners $\rightarrow$ Apigee Gateway**: 
+    - Third-party logistics (3PL) carriers and resellers hit the company's public-facing developer API portal. Apigee evaluates developer API keys, monetization quotas, and security policies before proxying traffic inward.
+10. **Apigee Gateway $\rightarrow$ Partner API Service (Cloud Run)**: 
+    - Apigee proxies the authenticated traffic securely to the fully isolated Serverless application running natively in Go.
+    - *API Pattern*: REST `POST /logistics/tracking` and `GET /catalog/products`.
+
+### Phase 5: Big Data Intelligence
+11. **Event Broker $\rightarrow$ Data Warehouse (BigQuery)**: 
+    - A direct BigQuery Pub/Sub Subscription ingests all event logs purely asynchronously, requiring zero compute overhead from the GKE cluster.
 
 ---
 
@@ -46,9 +51,10 @@ The core challenge of this architecture is bridging modern serverless technologi
 | Service Name | Platform | Language / Stack | Core Endpoints | State Storage |
 |--------------|----------|------------------|----------------|---------------|
 | **Checkout** | GCP GKE | Go / Python | Internal orchestrator | Stateless (Redis) |
-| **Apigee API**| Google Cloud API | SaaS API Management | Reverse Proxying / Auth | Token Caches |
 | **Event Broker**| GCP Pub/Sub | Managed SaaS | `Publish`, `Subscribe` | Managed Queues |
-| **OMS** | GCP Cloud Run | Go (`net/http`) | `POST /orders/fulfill` | Serverless Scale |
+| **OMS** | GCP Cloud Run | Node.js | Triggered via `POST /` | Serverless Scale |
+| **Apigee API**| Google Cloud API | SaaS API Management | Reverse Proxying / Auth | Token Caches |
+| **Partner API** | GCP Cloud Run | Go (`net/http`) | `POST /tracking`, `GET /catalog` | Serverless Scale |
 | **CRM** | GCP Compute VM | Node.js (Express) | `GET /customers` | Local SQLite/CloudSQL |
 | **Inventory**| GCP Compute VM | Node.js (Express) | `GET /inventory`, `PUT` | Memory / Disk |
 | **Warehouse**| GCP Cloud Run | Node.js (Express) | `POST /shipments` | Stateless |

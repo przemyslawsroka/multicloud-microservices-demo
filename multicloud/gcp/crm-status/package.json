@@ -3,11 +3,8 @@
   "version": "1.0.0",
   "description": "CRM Status Monitoring Dashboard",
   "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2"
   }
 }
-

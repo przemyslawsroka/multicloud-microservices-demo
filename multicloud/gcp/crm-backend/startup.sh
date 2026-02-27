@@ -25,21 +25,7 @@ sudo chown -R $(whoami):$(whoami) /opt/app
 cd /opt/app
 
 # Create the package.json file
-cat <<'EOF' > package.json
-{
-  "name": "mock-crm-service",
-  "version": "1.0.0",
-  "description": "Mock CRM Backend Service with GCS Logging",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "@google-cloud/storage": "^7.7.0"
-  }
-}
-EOF
+curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/package_json > package.json
 
 # Create the app.js file with the mock CRM logic
 cat <<'EOF' > app.js

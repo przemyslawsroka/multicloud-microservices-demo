@@ -93,8 +93,6 @@ spec:
         - name: CART_SERVICE_ADDR
           value: "{{ .Values.cartService.name }}:7070"
         # Multicloud service URLs (optional)
-        - name: AWS_ACCOUNTING_URL
-          value: "{{ .Values.checkoutService.awsAccountingUrl | default "" }}"
         - name: AZURE_ANALYTICS_URL
           value: "{{ .Values.checkoutService.azureAnalyticsUrl | default "" }}"
         - name: GCP_CRM_URL

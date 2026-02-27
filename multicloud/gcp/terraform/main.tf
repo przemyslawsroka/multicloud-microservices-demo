@@ -10,7 +10,7 @@ terraform {
 
   # Remote state configuration - store in GCS bucket
   backend "gcs" {
-    bucket = "network-obs-demo-terraform-state"
+    bucket = "YOUR_GCP_PROJECT_ID-terraform-state"
     prefix = "terraform/state"
   }
 }

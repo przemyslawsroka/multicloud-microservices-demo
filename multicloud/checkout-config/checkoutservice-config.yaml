@@ -11,7 +11,7 @@ data:
   GCP_WAREHOUSE_URL: "https://warehouse-api-service-985429063844.europe-west1.run.app"  # Cloud Run
   GCP_ACCOUNTING_URL: "https://accounting-api-service-985429063844.us-central1.run.app" # Cloud Run
   PUBSUB_TOPIC: "order-events"                     # Pub/Sub topic for OrderConfirmedEvent
-  GCP_PROJECT_ID: "network-obs-demo"               # Replace with your GCP Project ID
+  GCP_PROJECT_ID: "YOUR_GCP_PROJECT_ID"               # Replace with your GCP Project ID
 ---
 # Apply this ConfigMap first, then update your checkoutservice deployment to use it
 # kubectl apply -f checkoutservice-config.yaml 

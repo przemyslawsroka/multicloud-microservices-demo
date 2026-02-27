@@ -44,7 +44,7 @@ spec:
                 - ALL
             privileged: false
             readOnlyRootFilesystem: true
-          image: gcr.io/network-obs-demo/checkoutservice:latest
+          image: gcr.io/YOUR_GCP_PROJECT_ID/checkoutservice:latest
           ports:
           - containerPort: 5050
           readinessProbe:

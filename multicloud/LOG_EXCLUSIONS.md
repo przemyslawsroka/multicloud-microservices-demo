@@ -86,20 +86,20 @@ Filter: logName:"GCEGuestAgent"
 ### List All Exclusion Filters
 ```bash
 curl -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-  "https://logging.googleapis.com/v2/projects/network-obs-demo/exclusions"
+  "https://logging.googleapis.com/v2/projects/YOUR_GCP_PROJECT_ID/exclusions"
 ```
 
 ### Delete an Exclusion Filter (if needed)
 ```bash
 curl -X DELETE -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-  "https://logging.googleapis.com/v2/projects/network-obs-demo/exclusions/FILTER_NAME"
+  "https://logging.googleapis.com/v2/projects/YOUR_GCP_PROJECT_ID/exclusions/FILTER_NAME"
 ```
 
 ### Update an Exclusion Filter
 ```bash
 curl -X PATCH -H "Authorization: Bearer $(gcloud auth print-access-token)" \
   -H "Content-Type: application/json" \
-  "https://logging.googleapis.com/v2/projects/network-obs-demo/exclusions/FILTER_NAME?updateMask=filter,description" \
+  "https://logging.googleapis.com/v2/projects/YOUR_GCP_PROJECT_ID/exclusions/FILTER_NAME?updateMask=filter,description" \
   -d '{"description": "Updated description", "filter": "updated filter"}'
 ```
 
@@ -127,7 +127,7 @@ To verify logs are clean:
 ```bash
 # Check for any ERROR logs in the last hour
 gcloud logging read "severity=ERROR AND timestamp>=\"$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)\"" \
-  --limit=50 --format="table(timestamp,logName,severity)" --project=network-obs-demo
+  --limit=50 --format="table(timestamp,logName,severity)" --project=YOUR_GCP_PROJECT_ID
 ```
 
 Expected result: No errors, or only actual application/infrastructure issues that need attention.

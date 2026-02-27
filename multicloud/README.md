@@ -329,7 +329,7 @@ curl -X DELETE $ACCOUNTING_URL/transactions/1
 1. **GCP CRM Direct Calls**: Intermittent timeouts - may need VPC peering adjustment.
 2. **Inventory/Furniture Services**: JSON decode warnings exist (API temporarily returns an array instead of standard objects but doesn't block orders).
 3. **Warehouse → Inventory Connectivity**: Egress connection currently unavailable/timeout (VPC connectivity issue under investigation).
-4. **Checkout Service Docker Image**: If Kubernetes reverts to `us-central1-docker.pkg.dev/google-samples/microservices-demo/checkoutservice:v0.10.3`, the multicloud code will break. Always ensure we use `gcr.io/network-obs-demo/checkoutservice:latest`.
+4. **Checkout Service Docker Image**: If Kubernetes reverts to `us-central1-docker.pkg.dev/google-samples/microservices-demo/checkoutservice:v0.10.3`, the multicloud code will break. Always ensure we use `gcr.io/YOUR_GCP_PROJECT_ID/checkoutservice:latest`.
 
 ## Cleanup
 

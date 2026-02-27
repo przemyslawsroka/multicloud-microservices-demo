@@ -336,11 +336,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	}
 	log.Infof("payment went through (transaction_id: %s)", txID)
 
-	// Manage customer in CRM
-	if err := cs.manageCustomer(ctx, req.Email, req.Address); err != nil {
-		log.Warnf("Failed to update CRM: %v", err)
-		// Don't fail the order, just log
-	}
+	// CRM call removed from here, moving down below orderResult creation
 
 	shippingTrackingID, err := cs.shipOrder(ctx, req.Address, prep.cartItems)
 	if err != nil {
@@ -364,9 +360,15 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	}
 
 	// Publish OrderConfirmedEvent to Pub/Sub
+	totalFloat := float32(total.Units) + float32(total.Nanos)/1e9
+			
+	// Manage customer in CRM
+	if err := cs.manageCustomer(ctx, req.Email, req.Address, orderResult, totalFloat, req.UserCurrency); err != nil {
+		log.Warnf("Failed to update CRM: %v", err)
+		// Don't fail the order, just log
+	}
+
 	if cs.pubsubClient != nil && cs.pubsubTopic != "" {
-		totalFloat := float32(total.Units) + float32(total.Nanos)/1e9
-		
 		event := map[string]interface{}{
 			"orderId":       orderID.String(),
 			"customerEmail": req.Email,
@@ -531,7 +533,7 @@ func (cs *checkoutService) recordMetrics(ctx context.Context, duration time.Dura
 }
 
 // manageCustomer calls GCP CRM Service
-func (cs *checkoutService) manageCustomer(ctx context.Context, email string, address *pb.Address) error {
+func (cs *checkoutService) manageCustomer(ctx context.Context, email string, address *pb.Address, order *pb.OrderResult, totalFloat float32, currency string) error {
 	if cs.gcpCrmURL == "" {
 		log.Debug("GCP CRM URL not configured, skipping")
 		return nil
@@ -546,10 +548,32 @@ func (cs *checkoutService) manageCustomer(ctx context.Context, email string, add
 	if address != nil && address.StreetAddress != "" {
 		surname = "Customer"
 	}
+	
+	addressString := ""
+	if address != nil {
+		addressString = fmt.Sprintf("%s, %s, %s, %s %d", address.StreetAddress, address.City, address.State, address.Country, address.ZipCode)
+	}
+	
+	var shippingCost float32 = 0
+	if order != nil && order.ShippingCost != nil {
+		shippingCost = float32(order.ShippingCost.Units) + float32(order.ShippingCost.Nanos)/1e9
+	}
 
 	customerData := map[string]interface{}{
 		"name":    name,
 		"surname": surname,
+		"email":   email,
+		"address": addressString,
+	}
+	
+	if order != nil {
+		customerData["order"] = map[string]interface{}{
+			"orderId":      order.OrderId,
+			"trackingId":   order.ShippingTrackingId,
+			"shippingCost": shippingCost,
+			"totalAmount":  totalFloat,
+			"currency":     currency,
+		}
 	}
 
 	log.Infof("Managing customer in GCP CRM: email=%s", email)

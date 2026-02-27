@@ -75,6 +75,7 @@ app.get('/', (req, res) => {
                             <tr>
                                 <th class="ps-4">Customer</th>
                                 <th>Status</th>
+                                <th>Orders</th>
                                 <th>Added Date</th>
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
@@ -142,14 +143,45 @@ app.get('/', (req, res) => {
         </div>
     </div>
 
+    <!-- Orders Modal -->
+    <div class="modal fade" id="ordersModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title">Orders: <span id="ordersCustomerName" class="fw-bold"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Order ID</th>
+                                    <th>Tracking ID</th>
+                                    <th>Shipping</th>
+                                    <th>Total Amount</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersList">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const BACKEND_URL = '/api/customers';
-        let customerModal, deleteModal, toast;
+        let customerModal, deleteModal, ordersModal, toast;
+        let globalCustomersData = [];
         
         document.addEventListener('DOMContentLoaded', () => {
             customerModal = new bootstrap.Modal(document.getElementById('customerModal'));
             deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            ordersModal = new bootstrap.Modal(document.getElementById('ordersModal'));
             toast = new bootstrap.Toast(document.getElementById('toastMessage'));
             loadCustomers();
         });
@@ -179,6 +211,7 @@ app.get('/', (req, res) => {
             try {
                 const res = await fetch(BACKEND_URL);
                 const customers = await res.json();
+                globalCustomersData = customers;
                 
                 document.getElementById('customerCount').textContent = customers.length;
                 
@@ -191,9 +224,21 @@ app.get('/', (req, res) => {
                     customers.forEach(c => {
                         const tr = document.createElement('tr');
                         const vColors = getColors(c.name);
-                        const initials = (c.name[0] + c.surname[0]).toUpperCase();
+                        const initials = (c.name[0] + (c.surname ? c.surname[0] : '')).toUpperCase();
                         const dateAdded = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'Legacy';
                         const cId = c.id || (c.name + '-' + c.surname); // Fallback for old mock data
+                        
+                        let addressHtml = '';
+                        if (c.address) {
+                            addressHtml = \`<div class="small text-muted"><i class="bi bi-geo-alt"></i> \${c.address}</div>\`;
+                        } else if (c.email) {
+                            addressHtml = \`<div class="small text-muted"><i class="bi bi-envelope"></i> \${c.email}</div>\`;
+                        }
+                        
+                        let ordersBadge = '<span class="text-muted small">0 Orders</span>';
+                        if (c.Orders && c.Orders.length > 0) {
+                            ordersBadge = \`<span class="badge bg-primary bg-opacity-10 text-primary border border-primary cursor-pointer" style="cursor: pointer" onclick="viewOrders('\${c.id}')"><i class="bi bi-box-seam me-1"></i>\${c.Orders.length} Order(s)</span>\`;
+                        }
                         
                         tr.innerHTML = \`
                             <td class="ps-4">
@@ -202,10 +247,12 @@ app.get('/', (req, res) => {
                                     <div>
                                         <div class="fw-bold text-dark">\${c.name} \${c.surname}</div>
                                         <div class="small text-muted">ID: \${cId}</div>
+                                        \${addressHtml}
                                     </div>
                                 </div>
                             </td>
                             <td><span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success">Active</span></td>
+                            <td>\${ordersBadge}</td>
                             <td><span class="text-muted small">\${dateAdded}</span></td>
                             <td class="text-end pe-4">
                                 \${c.id ? \`
@@ -244,6 +291,36 @@ app.get('/', (req, res) => {
         function openDeleteModal(id) {
             document.getElementById('deleteCustomerId').value = id;
             deleteModal.show();
+        }
+        
+        function viewOrders(id) {
+            const customer = globalCustomersData.find(c => String(c.id) === String(id));
+            if (!customer || !customer.Orders) return;
+            
+            document.getElementById('ordersCustomerName').textContent = \`\${customer.name} \${customer.surname}\`;
+            
+            const tbody = document.getElementById('ordersList');
+            tbody.innerHTML = '';
+            
+            if (customer.Orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No orders found.</td></tr>';
+            } else {
+                customer.Orders.forEach(o => {
+                    const tr = document.createElement('tr');
+                    const d = new Date(o.createdAt).toLocaleString();
+                    const tracking = o.trackingId ? \`<span class="badge bg-info bg-opacity-10 text-info border border-info">\${o.trackingId}</span>\` : '-';
+                    tr.innerHTML = \`
+                        <td class="ps-4 text-primary font-monospace small">\${o.orderId.substring(0,8)}...</td>
+                        <td>\${tracking}</td>
+                        <td>\${o.shippingCost ? o.currency + ' ' + o.shippingCost.toFixed(2) : '-'}</td>
+                        <td class="fw-bold">\${o.currency} \${o.totalAmount.toFixed(2)}</td>
+                        <td class="small text-muted">\${d}</td>
+                    \`;
+                    tbody.appendChild(tr);
+                });
+            }
+            
+            ordersModal.show();
         }
 
         async function saveCustomer() {

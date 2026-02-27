@@ -48,7 +48,20 @@ if (process.env.DB_HOST) {
 const Customer = sequelize.define('Customer', {
   name: { type: DataTypes.STRING, allowNull: false },
   surname: { type: DataTypes.STRING, allowNull: false },
+  email: { type: DataTypes.STRING },
+  address: { type: DataTypes.STRING }
 });
+
+const Order = sequelize.define('Order', {
+  orderId: { type: DataTypes.STRING, allowNull: false, unique: true },
+  trackingId: { type: DataTypes.STRING },
+  shippingCost: { type: DataTypes.FLOAT },
+  totalAmount: { type: DataTypes.FLOAT },
+  currency: { type: DataTypes.STRING }
+});
+
+Customer.hasMany(Order);
+Order.belongsTo(Customer);
 
 // Sync database and seed initial data
 sequelize.sync().then(async () => {
@@ -90,7 +103,10 @@ app.use((req, res, next) => {
 
 app.get('/customers', async (req, res) => {
   try {
-    const customers = await Customer.findAll();
+    const customers = await Customer.findAll({
+      include: [Order],
+      order: [['createdAt', 'DESC']]
+    });
     res.status(200).json(customers);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -98,12 +114,42 @@ app.get('/customers', async (req, res) => {
 });
 
 app.post('/customers', async (req, res) => {
-  const { name, surname } = req.body;
+  const { name, surname, email, address, order } = req.body;
+
+  // If email is provided, we use it to find existing
+  if (email) {
+    try {
+      let customer = await Customer.findOne({ where: { email } });
+      if (!customer) {
+        customer = await Customer.create({ name, surname, email, address });
+      } else {
+        await customer.update({ name, surname, address });
+      }
+
+      if (order && order.orderId) {
+        await Order.findOrCreate({
+          where: { orderId: order.orderId },
+          defaults: {
+            trackingId: order.trackingId,
+            shippingCost: order.shippingCost,
+            totalAmount: order.totalAmount,
+            currency: order.currency,
+            CustomerId: customer.id
+          }
+        });
+      }
+      return res.status(201).json(customer);
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  // Fallback for basic inserts without email
   if (!name || !surname) {
     return res.status(400).json({ error: 'Name and surname are required.' });
   }
   try {
-    const newCustomer = await Customer.create({ name, surname });
+    const newCustomer = await Customer.create({ name, surname, address });
     res.status(201).json(newCustomer);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -14,9 +14,8 @@ The core storefront operates natively on Google Cloud. However, the business log
 
 This section describes the business capabilities of each major IT system block within the enterprise.
 
-### 2.1 Core E-Commerce Front & Integration Layer
-*   **Checkout Service**: The central orchestrator. When a user places an order on the storefront, this service acts as the integration hub responsible for initiating the fulfillment flow.
-*   **Event Broker**: Replaces rigid point-to-point connections with an asynchronous publish/subscribe model. When an order is placed, it broadcasts business events so that downstream systems can react independently without slowing down the customer's checkout experience.
+### 2.1 Core E-Commerce Front
+*   **Checkout Service**: The central orchestrator. When a user places an order on the storefront, this service initiates the fulfillment flow by rapidly broadcasting the confirmed order to all downstream operational systems simultaneously without delaying the customer's receipt.
 
 ### 2.2 Enterprise Resource Planning (ERP)
 These systems represent traditional enterprise workloads safeguarding the company's core data.

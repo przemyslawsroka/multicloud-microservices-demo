@@ -25,7 +25,7 @@ These systems represent traditional enterprise workloads safeguarding the compan
 
 ### 2.3 Backend Operations
 Newly developed workflows utilizing dynamic, modernized infrastructure.
-*   **Order Management System (OMS)**: Assumes responsibility for the order's lifecycle the moment a checkout is confirmed. It orchestrates fulfillment routing, shipping updates, and returns via internal event-driven architectures.
+*   **Order Management System (OrderManagement)**: Assumes responsibility for the order's lifecycle the moment a checkout is confirmed. It orchestrates fulfillment routing, shipping updates, and returns via internal event-driven architectures.
 *   **Warehouse Service**: Handles complex shipping logistics, parcel dispatching, and physical tracking.
 *   **Accounting Service**: Records financial ledgers, tax calculations, and revenue recognition for every sale.
 

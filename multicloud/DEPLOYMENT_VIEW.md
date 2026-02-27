@@ -27,10 +27,10 @@ A core component of the "Online Boutique" demonstration is emphasizing *multi-re
 To maximize the demonstration of Google's global fiber backbone and cross-regional traffic routing, the newly established Backend Operations and B2B API layers are deliberately deployed in disparate geographical zones.
 
 ### 2.1 `australia-southeast1` (Sydney) - Order Orchestration
-*   **Order Management System (OMS)**: Serverless Cloud Run application. Demonstrates extreme long-haul integration. When triggered by a global Pub/Sub event, it successfully fires high-latency cross-region API executions to Accounting (`us-central1`) and Warehouse (`europe-west1`) over Google's planetary network.
+*   **Order Management System (OrderManagement)**: Serverless Cloud Run application. Demonstrates extreme long-haul integration. When triggered by a global Pub/Sub event, OrderManagement successfully fires high-latency cross-region API executions to Accounting (`us-central1`) and Warehouse (`europe-west1`) over Google's planetary network.
 
 ### 2.2 `us-west1` (Oregon) - Border API Shielding
-*   **API Management (Apigee)**: A dedicated enterprise gateway endpoint for all B2B partner connectivity (external validation) and internal OMS exposure (JWT authorization). 
+*   **API Management (Apigee)**: A dedicated enterprise gateway endpoint for all B2B partner connectivity (external validation) and internal OrderManagement exposure (JWT authorization). 
 
 ### 2.3 `europe-west3` (Frankfurt) - Partner Integration Layer
 *   **Partner API Service**: Serverless Cloud Run application serving European 3PL carriers and B2B Dropshippers. Apigee (`us-west1`) reverse-proxies authenticated requests completely securely to this backend over the Google edge network via Serverless NEGs.

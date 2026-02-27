@@ -23,14 +23,14 @@ The core challenge of this architecture is bridging modern serverless technologi
     - *API Pattern*: gRPC/HTTP publishing to Pub/Sub topic spanning the entire application graph.
 
 ### Phase 3: Order Lifecycle & Processing (Serverless Scale-out)
-6.  **Event Broker $\rightarrow$ Order Management System (OMS - Cloud Run)**: 
-    - The OMS is triggered automatically via a Pub/Sub Push Subscription (Eventarc). It ingests the `OrderConfirmedEvent` payload.
-7.  **OMS $\rightarrow$ Accounting (Cloud Run)**: 
-    - The OMS forwards financial payloads via synchronous POST to Accounting.
+6.  **Event Broker $\rightarrow$ Order Management System (OrderManagement - Cloud Run)**: 
+    - OrderManagement is triggered automatically via a Pub/Sub Push Subscription (Eventarc). It ingests the `OrderConfirmedEvent` payload.
+7.  **OrderManagement $\rightarrow$ Accounting (Cloud Run)**: 
+    - OrderManagement forwards financial payloads via synchronous POST to Accounting.
     - *API Pattern*: REST `POST /transactions`.
     - *Side-Effect Link*: The Accounting service simultaneously fetches billing data backward from the original **CRM Service (VM)** via synchronous GET.
-8.  **OMS $\rightarrow$ Warehouse (Cloud Run)**: 
-    - The OMS fires a fulfillment POST Request to the Warehouse APIs.
+8.  **OrderManagement $\rightarrow$ Warehouse (Cloud Run)**: 
+    - OrderManagement fires a fulfillment POST Request to the Warehouse APIs.
     - *Side-Effect Link*: The Warehouse service updates stock ledgers backward on the **Inventory Service (VM)** via `PUT /inventory/{productId}`.
 
 ### Phase 4: B2B Integration (Public APIs)
@@ -52,7 +52,7 @@ The core challenge of this architecture is bridging modern serverless technologi
 |--------------|----------|------------------|----------------|---------------|
 | **Checkout** | GCP GKE | Go / Python | Internal orchestrator | Stateless (Redis) |
 | **Event Broker**| GCP Pub/Sub | Managed SaaS | `Publish`, `Subscribe` | Managed Queues |
-| **OMS** | GCP Cloud Run | Node.js | Triggered via `POST /` | Serverless Scale |
+| **OrderManagement**| GCP Cloud Run | Node.js | Triggered via `POST /` | Serverless Scale |
 | **Apigee API**| Google Cloud API | SaaS API Management | Reverse Proxying / Auth | Token Caches |
 | **Partner API** | GCP Cloud Run | Go (`net/http`) | `POST /tracking`, `GET /catalog` | Serverless Scale |
 | **CRM** | GCP Compute VM | Node.js (Express) | `GET /customers` | Local SQLite/CloudSQL |

@@ -37,7 +37,7 @@ The core challenge of this architecture is bridging modern serverless technologi
 9.  **External B2B Partners $\rightarrow$ Apigee Gateway**: 
     - Third-party logistics (3PL) carriers and resellers hit the company's public-facing developer API portal. Apigee evaluates developer API keys, monetization quotas, and security policies before proxying traffic inward.
 10. **Apigee Gateway $\rightarrow$ Partner API Service (Cloud Run)**: 
-    - Apigee proxies the authenticated traffic securely to the fully isolated Serverless application running natively in Go.
+    - Apigee proxies the authenticated traffic securely to the fully isolated Serverless application running natively in Node.js/TypeScript.
     - *API Pattern*: REST `POST /logistics/tracking` and `GET /catalog/products`.
 
 ### Phase 5: Big Data Intelligence
@@ -54,7 +54,7 @@ The core challenge of this architecture is bridging modern serverless technologi
 | **Event Broker**| GCP Pub/Sub | Managed SaaS | `Publish`, `Subscribe` | Managed Queues |
 | **OrderManagement**| GCP Cloud Run | Node.js | Triggered via `POST /` | Serverless Scale |
 | **Apigee API**| Google Cloud API | SaaS API Management | Reverse Proxying / Auth | Token Caches |
-| **Partner API** | GCP Cloud Run | Go (`net/http`) | `POST /tracking`, `GET /catalog` | Serverless Scale |
+| **Partner API** | GCP Cloud Run | Node.js (TS) | `POST /tracking`, `GET /catalog` | Serverless Scale |
 | **CRM** | GCP Compute VM | Node.js (Express) | `GET /customers` | Local SQLite/CloudSQL |
 | **Inventory**| GCP Compute VM | Node.js (Express) | `GET /inventory`, `PUT` | Memory / Disk |
 | **Warehouse**| GCP Cloud Run | Node.js (Express) | `POST /shipments` | Stateless |

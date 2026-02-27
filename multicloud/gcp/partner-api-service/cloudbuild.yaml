@@ -1,0 +1,29 @@
+steps:
+  # Build the Docker image for Partner API (TypeScript)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west3-docker.pkg.dev/${PROJECT_ID}/partner-api-repo/partner-api-service:${BUILD_ID}'
+      - '-t'
+      - 'europe-west3-docker.pkg.dev/${PROJECT_ID}/partner-api-repo/partner-api-service:latest'
+      - '.'
+
+  # Push the image with BUILD_ID tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west3-docker.pkg.dev/${PROJECT_ID}/partner-api-repo/partner-api-service:${BUILD_ID}'
+
+  # Push the image with latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west3-docker.pkg.dev/${PROJECT_ID}/partner-api-repo/partner-api-service:latest'
+
+images:
+  - 'europe-west3-docker.pkg.dev/${PROJECT_ID}/partner-api-repo/partner-api-service:${BUILD_ID}'
+  - 'europe-west3-docker.pkg.dev/${PROJECT_ID}/partner-api-repo/partner-api-service:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

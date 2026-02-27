@@ -1,0 +1,12 @@
+{
+  "name": "ordermanagement-service",
+  "version": "1.0.0",
+  "description": "Order Management System processing Pub/Sub push events",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

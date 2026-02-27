@@ -4,10 +4,12 @@ metadata:
   name: checkoutservice-config
   namespace: default
 data:
-  AWS_ACCOUNTING_URL: "http://54.163.148.73:8080"
-  AZURE_ANALYTICS_URL: "http://20.160.153.10:8080"
-  GCP_CRM_URL: "http://10.2.0.2:8080"
-  GCP_INVENTORY_URL: "http://10.132.0.3:8080"
+  AZURE_ANALYTICS_URL: "http://10.2.1.5:8080"      # Private IP via interconnect
+  GCP_CRM_URL: "http://10.3.0.2:8080"              # CRM backend VM
+  GCP_INVENTORY_URL: "http://10.132.0.3:8080"      # Inventory service
+  GCP_FURNITURE_URL: "http://10.5.0.2:8080"        # Furniture service
+  GCP_WAREHOUSE_URL: "https://warehouse-api-service-985429063844.europe-west1.run.app"  # Cloud Run
+  GCP_ACCOUNTING_URL: "https://accounting-api-service-985429063844.us-central1.run.app" # Cloud Run
 ---
 # Apply this ConfigMap first, then update your checkoutservice deployment to use it
 # kubectl apply -f checkoutservice-config.yaml 

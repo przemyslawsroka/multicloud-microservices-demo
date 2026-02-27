@@ -8,10 +8,12 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^7.7.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "cors": "^2.8.6",
     "express": "^4.18.2",
     "mysql2": "^3.18.2",
     "sequelize": "^6.37.7",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "zod": "^4.3.6"
   }
 }

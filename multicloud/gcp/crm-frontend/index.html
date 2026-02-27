@@ -47,6 +47,24 @@
         .view-section { display: none; }
         .view-section.active { display: block; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Chat Widget */
+        .chat-widget { position: fixed; bottom: 30px; right: 30px; z-index: 1040; display: flex; flex-direction: column; align-items: flex-end; }
+        .chat-toggle { width: 60px; height: 60px; border-radius: 50%; background: #1e3c72; color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 1.5rem; cursor: pointer; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
+        .chat-toggle:hover { transform: scale(1.05); }
+        .chat-window { width: 350px; height: 450px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; margin-bottom: 15px; border: 1px solid #edf2f9; }
+        .chat-header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 15px 20px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .chat-header .btn-close { filter: invert(1); opacity: 0.8; font-size: 0.8rem; }
+        .chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 10px; }
+        .chat-msg { max-width: 85%; padding: 10px 15px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; }
+        .msg-user { background: #e3ebf6; color: #1e3c72; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg-agent { background: white; color: #343a40; align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #edf2f9; }
+        .chat-input { padding: 15px; background: white; border-top: 1px solid #edf2f9; display: flex; gap: 10px; }
+        .chat-input input { flex-grow: 1; border: 1px solid #dee2e6; border-radius: 20px; padding: 8px 15px; outline: none; transition: border-color 0.2s; }
+        .chat-input input:focus { border-color: #2a5298; }
+        .chat-input button { background: #2a5298; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .chat-input button:hover { background: #1e3c72; }
+        .typing-indicator { display: none; font-size: 0.8rem; color: #6c757d; padding: 0 15px 10px; background: #f8f9fa; }
     </style>
 </head>
 <body>
@@ -246,10 +264,31 @@
         </div>
     </div>
 
+    <!-- AI Concierge Widget -->
+    <div class="chat-widget">
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <div><i class="bi bi-robot me-2"></i> Concierge AI</div>
+                <button class="btn-close" onclick="toggleChat()"></button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-msg msg-agent">Hi there! Ask me about customers or specific order IDs.</div>
+            </div>
+            <div class="typing-indicator" id="chatTyping"><i class="bi bi-three-dots"></i> AI is thinking...</div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="Look up customer orders..."
+                    onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()"><i class="bi bi-send-fill"></i></button>
+            </div>
+        </div>
+        <button class="chat-toggle" onclick="toggleChat()"><i class="bi bi-chat-dots-fill"></i></button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const API = { cust: '/api/customers', orders: '/api/orders', stats: '/api/stats' };
         let modals = {}; let globalCustomers = [];
+                let agentSessionId = 'sess_' + Math.random().toString(36).substr(2, 9);
         
         document.addEventListener('DOMContentLoaded', () => {
             modals.customer = new bootstrap.Modal(document.getElementById('customerModal'));
@@ -303,14 +342,14 @@
                     const tbody = document.getElementById('customerList'); tbody.innerHTML='';
                     globalCustomers.forEach(c => {
                         const tr = document.createElement('tr');
-                        const adr = c.address ? \`<div class="small text-muted"><i class="bi bi-geo-alt"></i> \${c.address}</div>\` : (c.email ? \`<div class="small text-muted"><i class="bi bi-envelope"></i> \${c.email}</div>\`:'');
-                        const ords = c.Orders && c.Orders.length>0 ? \`<span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="bi bi-box-seam me-1"></i>\${c.Orders.length}</span>\` : '<span class="text-muted small">0</span>';
-                        tr.innerHTML = \`
-                            <td class="ps-4"><div class="d-flex align-items-center"><div class="avatar" style="background-color:\${getColor(c.name)}">\${getAvatar(c.name)}</div><div><div class="fw-bold">\${c.name} \${c.surname}</div><div class="small text-muted">ID: \${c.id}</div>\${adr}</div></div></td>
+                        const adr = c.address ? `<div class="small text-muted"><i class="bi bi-geo-alt"></i> ${c.address}</div>` : (c.email ? `<div class="small text-muted"><i class="bi bi-envelope"></i> ${c.email}</div>` : '');
+                        const ords = c.Orders && c.Orders.length > 0 ? `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="bi bi-box-seam me-1"></i>${c.Orders.length}</span>` : '<span class="text-muted small">0</span>';
+                        tr.innerHTML = `
+                            <td class="ps-4"><div class="d-flex align-items-center"><div class="avatar" style="background-color:${getColor(c.name)}">${getAvatar(c.name)}</div><div><div class="fw-bold">${c.name} ${c.surname}</div><div class="small text-muted">ID: ${c.id}</div>${adr}</div></div></td>
                             <td><span class="badge bg-success bg-opacity-10 text-success border border-success">Active</span></td>
-                            <td>\${ords}</td><td><span class="text-muted small">\${new Date(c.createdAt).toLocaleDateString()}</span></td>
-                            <td class="text-end pe-4"><i class="bi bi-pencil-square action-icon" onclick="openCustomerModal('\${c.id}')"></i> <i class="bi bi-trash action-icon delete-icon" onclick="deleteCustomer('\${c.id}')"></i></td>
-                        \`; tbody.appendChild(tr);
+                            <td>${ords}</td><td><span class="text-muted small">${new Date(c.createdAt).toLocaleDateString()}</span></td>
+                            <td class="text-end pe-4"><i class="bi bi-pencil-square action-icon" onclick="openCustomerModal('${c.id}')"></i> <i class="bi bi-trash action-icon delete-icon" onclick="deleteCustomer('${c.id}')"></i></td>
+                        `; tbody.appendChild(tr);
                     });
                     document.getElementById('customersTable').style.display='table';
                 }
@@ -327,14 +366,14 @@
                     orders.forEach(o => {
                         const tr = document.createElement('tr');
                         const c = o.Customer || {name:'Unknown', surname:''};
-                        tr.innerHTML = \`
-                            <td class="ps-4"><span class="font-monospace text-primary small">\${o.orderId.substring(0,12)}...</span></td>
-                            <td><div class="fw-bold">\${c.name} \${c.surname}</div><div class="small text-muted">Cust ID: \${o.CustomerId}</div></td>
-                            <td>\${o.trackingId ? \`<span class="badge bg-info bg-opacity-10 text-info border border-info">\${o.trackingId}</span>\`:'-'}</td>
-                            <td><div class="fw-bold">\${o.currency} \${o.totalAmount.toFixed(2)}</div><div class="small text-muted">Shipping: \${o.currency} \${o.shippingCost}</div></td>
-                            <td><span class="small text-muted">\${new Date(o.createdAt).toLocaleString()}</span></td>
-                            <td class="text-end pe-4"><i class="bi bi-trash action-icon delete-icon" onclick="deleteOrder('\${o.id}')"></i></td>
-                        \`; tbody.appendChild(tr);
+                        tr.innerHTML = `
+                            <td class="ps-4"><span class="font-monospace text-primary small">${o.orderId.substring(0, 12)}...</span></td>
+                            <td><div class="fw-bold">${c.name} ${c.surname}</div><div class="small text-muted">Cust ID: ${o.CustomerId}</div></td>
+                            <td>${o.trackingId ? `<span class="badge bg-info bg-opacity-10 text-info border border-info">${o.trackingId}</span>` : '-'}</td>
+                            <td><div class="fw-bold">${o.currency} ${o.totalAmount.toFixed(2)}</div><div class="small text-muted">Shipping: ${o.currency} ${o.shippingCost}</div></td>
+                            <td><span class="small text-muted">${new Date(o.createdAt).toLocaleString()}</span></td>
+                            <td class="text-end pe-4"><i class="bi bi-trash action-icon delete-icon" onclick="deleteOrder('${o.id}')"></i></td>
+                        `; tbody.appendChild(tr);
                     });
                     document.getElementById('ordersTable').style.display='table';
                 }
@@ -358,7 +397,7 @@
             document.getElementById('orderForm').reset();
             const res = await fetch(API.cust); const custs = await res.json();
             const sel = document.getElementById('orderCustomerId'); sel.innerHTML = '<option value="">Select customer...</option>';
-            custs.forEach(c => sel.innerHTML += \`<option value="\${c.id}">\${c.name} \${c.surname} (ID:\${c.id})</option>\`);
+            custs.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name} ${c.surname} (ID:${c.id})</option>`);
             // generate random order id
             document.getElementById('orderId').value = Math.random().toString(36).substring(2,15) + Math.random().toString(36).substring(2,15);
             modals.order.show();
@@ -372,7 +411,7 @@
             };
             if(!data.name || !data.surname) return showToast('Name/Surname required', true);
             try {
-                const res = await fetch(id ? \`\${API.cust}/\${id}\` : API.cust, { method: id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+                const res = await fetch(id ? `${API.cust}/${id}` : API.cust, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 if (res.ok) { showToast('Customer saved!'); modals.customer.hide(); loadCustomers(); loadStats(); } else throw new Error();
             } catch(e) { showToast('Error saving', true); }
         }
@@ -390,8 +429,47 @@
             } catch(e) { showToast('Error saving', true); }
         }
 
-        async function deleteCustomer(id) { if(confirm('Delete customer?')) { await fetch(\`\${API.cust}/\${id}\`, {method:'DELETE'}); loadCustomers(); loadStats(); } }
-        async function deleteOrder(id) { if(confirm('Delete order?')) { await fetch(\`\${API.orders}/\${id}\`, {method:'DELETE'}); loadOrders(); loadStats(); } }
+            async function deleteCustomer(id) { if (confirm('Delete customer?')) { await fetch(`${API.cust}/${id}`, { method: 'DELETE' }); loadCustomers(); loadStats(); } }
+            async function deleteOrder(id) { if (confirm('Delete order?')) { await fetch(`${API.orders}/${id}`, { method: 'DELETE' }); loadOrders(); loadStats(); } }
+
+            // Chat Widget Logic
+            function toggleChat() {
+                const w = document.getElementById('chatWindow');
+                w.style.display = w.style.display === 'flex' ? 'none' : 'flex';
+                if (w.style.display === 'flex') document.getElementById('chatInput').focus();
+            }
+
+            async function sendChatMessage() {
+                const inputEl = document.getElementById('chatInput');
+                const msg = inputEl.value.trim();
+                if (!msg) return;
+
+                inputEl.value = '';
+                appendChat('user', msg);
+                document.getElementById('chatTyping').style.display = 'block';
+
+                try {
+                    const res = await fetch('http://localhost:9083/v1/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: msg, sessionId: agentSessionId })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        appendChat('agent', data.response || 'No response from AI.');
+                    } else { appendChat('agent', 'Error connecting to Local AI Server.'); }
+                } catch (e) { appendChat('agent', 'Fatal connection failure to ADK Agent Port 9083.'); }
+                finally { document.getElementById('chatTyping').style.display = 'none'; }
+            }
+
+            function appendChat(role, text) {
+                const msgBox = document.getElementById('chatMessages');
+                const div = document.createElement('div');
+                div.className = `chat-msg msg-${role}`;
+                div.textContent = text;
+                msgBox.appendChild(div);
+                msgBox.scrollTop = msgBox.scrollHeight;
+            }
     </script>
 </body>
 </html>

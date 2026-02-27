@@ -60,6 +60,10 @@ const Order = sequelize.define('Order', {
   currency: { type: DataTypes.STRING }
 });
 
+const { Server } = require("@modelcontextprotocol/sdk/server/index.js");
+const { SSEServerTransport } = require("@modelcontextprotocol/sdk/server/sse.js");
+const { CallToolRequestSchema, ListToolsRequestSchema } = require("@modelcontextprotocol/sdk/types.js");
+
 Customer.hasMany(Order);
 Order.belongsTo(Customer);
 
@@ -181,6 +185,142 @@ app.delete('/customers/:id', async (req, res) => {
     res.status(200).json({ message: 'Customer deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Orders Endpoints
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await Order.findAll({
+      include: [Customer],
+      order: [['createdAt', 'DESC']]
+    });
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/orders', async (req, res) => {
+  const { orderId, trackingId, shippingCost, totalAmount, currency, CustomerId } = req.body;
+  if (!orderId || !CustomerId) {
+    return res.status(400).json({ error: 'Order ID and Customer ID are required.' });
+  }
+  try {
+    const newOrder = await Order.create({ orderId, trackingId, shippingCost, totalAmount, currency, CustomerId });
+    res.status(201).json(newOrder);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/orders/:id', async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    await order.destroy();
+    res.status(200).json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Stats Endpoint
+app.get('/stats', async (req, res) => {
+  try {
+    const customerCount = await Customer.count();
+    const orderCount = await Order.count();
+    const totalRevenue = await Order.sum('totalAmount') || 0;
+
+    res.status(200).json({
+      customers: customerCount,
+      orders: orderCount,
+      revenue: totalRevenue
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// MCP Server Integration (Agent Gateway)
+// ==========================================
+const mcpServer = new Server({ name: "crm-mcp", version: "1.0.0" }, { capabilities: { tools: {} } });
+
+mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: "lookup_customer",
+      description: "Lookup a customer and their lifetime revenue by first and last name.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          surname: { type: "string" }
+        },
+        required: ["name", "surname"]
+      }
+    },
+    {
+      name: "find_order",
+      description: "Find an order object by its internal tracking ID to check its status or value.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          trackingId: { type: "string" }
+        },
+        required: ["trackingId"]
+      }
+    }
+  ]
+}));
+
+mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
+  try {
+    if (request.params.name === "lookup_customer") {
+      const { name, surname } = request.params.arguments;
+      const c = await Customer.findOne({ where: { name, surname }, include: [Order] });
+      if (!c) return { content: [{ type: "text", text: `Customer ${name} ${surname} not found.` }] };
+      const totalSpent = c.Orders.reduce((acc, curr) => acc + curr.totalAmount, 0);
+      return {
+        content: [{
+          type: "text", text: JSON.stringify({
+            id: c.id, email: c.email, address: c.address, lifetimeRevenue: totalSpent, ordersCount: c.Orders.length
+          })
+        }]
+      };
+    }
+    if (request.params.name === "find_order") {
+      const { trackingId } = request.params.arguments;
+      const o = await Order.findOne({ where: { trackingId }, include: [Customer] });
+      if (!o) return { content: [{ type: "text", text: `Order with tracking ID ${trackingId} not found.` }] };
+      return {
+        content: [{
+          type: "text", text: JSON.stringify({
+            orderId: o.orderId, trackingId: o.trackingId, totalAmount: o.totalAmount, currency: o.currency,
+            customerName: o.Customer.name + ' ' + o.Customer.surname
+          })
+        }]
+      };
+    }
+    throw new Error("Unknown tool");
+  } catch (e) {
+    return { isError: true, content: [{ type: "text", text: e.message }] };
+  }
+});
+
+let transport;
+app.get('/sse', async (req, res) => {
+  transport = new SSEServerTransport('/message', res);
+  await mcpServer.connect(transport);
+});
+
+app.post('/message', async (req, res) => {
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  } else {
+    res.status(503).send("MCP Server not active");
   }
 });
 

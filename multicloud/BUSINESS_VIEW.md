@@ -16,7 +16,6 @@ This section describes the business capabilities of each major IT system block w
 
 ### 2.1 Core E-Commerce Front & Integration Layer
 *   **Checkout Service**: The central orchestrator. When a user places an order on the storefront, this service acts as the integration hub responsible for initiating the fulfillment flow.
-*   **API Gateway**: The single administrative entry point for all client requests. It handles edge routing, rate limiting, and protects the backend from malicious traffic spikes.
 *   **Event Broker**: Replaces rigid point-to-point connections with an asynchronous publish/subscribe model. When an order is placed, it broadcasts business events so that downstream systems can react independently without slowing down the customer's checkout experience.
 
 ### 2.2 Enterprise Resource Planning (ERP)
@@ -27,7 +26,8 @@ These systems represent traditional enterprise workloads safeguarding the compan
 
 ### 2.3 Backend Operations
 Newly developed workflows utilizing dynamic, modernized infrastructure.
-*   **Order Management System (OMS)**: Assumes responsibility for the order's lifecycle the moment a checkout is confirmed. It orchestrates fulfillment routing, shipping updates, and returns.
+*   **API Management (Apigee)**: The enterprise-grade gateway shielding the backend operations. It securely exposes and manages APIs for the OMS and other internal microservices, handling quotas, developer portals, and deep threat protection before traffic hits the backend logical units.
+*   **Order Management System (OMS)**: Secured tightly behind Apigee, this service assumes responsibility for the order's lifecycle the moment a checkout is confirmed. It orchestrates fulfillment routing, shipping updates, and returns via structured API endpoints.
 *   **Warehouse Service**: Handles complex shipping logistics, parcel dispatching, and physical tracking.
 *   **Accounting Service**: Records financial ledgers, tax calculations, and revenue recognition for every sale.
 

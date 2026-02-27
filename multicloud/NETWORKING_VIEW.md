@@ -43,6 +43,11 @@ Modern serverless compute naturally boots outside of user-defined VPCs. We demon
 *   **Design Profile**: The Accounting Service routes its private traffic through a dedicated, managed VM "Connector" bridge deployed inside the target CRM network.
 *   **Rationale**: Displays the older, legacy method of serverless connectivity. High scale introduces bottlenecking and cold starts at the connector layer, showcasing why Direct VPC Egress is superior for high-throughput microservices.
 
+### 3.3 Serverless Service Integration / Serverless NEGs
+**Component & Target:** Apigee Gateway $\rightarrow$ Order Management System (Cloud Run)
+*   **Design Profile**: The OMS application sits entirely isolated with `Ingress: internal` preventing any direct external connections. Apigee connects strictly via a reverse-proxy Serverless NEG without using public IPs.
+*   **Rationale**: By restricting ingress, the backend application drops any packet not strictly originating from the VPC or managed Google APIs. Apigee sits at the network border and provides an additional layer of security, parsing JWT tokens and quotas securely over the internal backbone.
+
 ---
 
 ## 4. Asynchronous & Multi-Cloud Networking

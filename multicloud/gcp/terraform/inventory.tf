@@ -14,6 +14,16 @@ resource "google_compute_network" "inventory_vpc" {
   description             = "Dedicated VPC for inventory service"
 }
 
+# 1a. Enable VPC Flow Logs for inventory network (100% sampling)
+resource "google_network_management_vpc_flow_logs_config" "inventory_vpc_flow_logs" {
+  vpc_flow_logs_config_id = "inventory-vpc-flow-logs"
+  location                = "global"
+  network                 = google_compute_network.inventory_vpc.id
+  state                   = "ENABLED"
+  flow_sampling           = 1.0
+  aggregation_interval    = "INTERVAL_5_SEC"
+}
+
 # 2. Create a subnet in the inventory VPC
 resource "google_compute_subnetwork" "inventory_subnet" {
   name          = "inventory-subnet"

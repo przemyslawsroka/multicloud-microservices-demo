@@ -32,27 +32,27 @@ resource "google_compute_forwarding_rule" "oob_collector_ilb" {
 
 # 2. Mirroring Deployment Group
 resource "google_network_security_mirroring_deployment_group" "oob_mdg" {
-  provider                       = google-beta
-  mirroring_deployment_group_id  = "crm-mdg"
-  location                       = "global"
-  network                        = google_compute_network.crm_vpc.id
+  provider                      = google-beta
+  mirroring_deployment_group_id = "crm-mdg"
+  location                      = "global"
+  network                       = google_compute_network.crm_vpc.id
 }
 
 # 3. Mirroring Deployment
 resource "google_network_security_mirroring_deployment" "oob_md" {
-  provider                  = google-beta
-  mirroring_deployment_id   = "crm-md"
-  location                  = "asia-east1-a"
-  forwarding_rule           = google_compute_forwarding_rule.oob_collector_ilb.id
+  provider                   = google-beta
+  mirroring_deployment_id    = "crm-md"
+  location                   = "asia-east1-a"
+  forwarding_rule            = google_compute_forwarding_rule.oob_collector_ilb.id
   mirroring_deployment_group = google_network_security_mirroring_deployment_group.oob_mdg.id
 }
 
 # 4. Mirroring Endpoint Group
 resource "google_network_security_mirroring_endpoint_group" "oob_meg" {
-  provider                     = google-beta
-  mirroring_endpoint_group_id  = "crm-meg"
-  location                     = "global"
-  mirroring_deployment_group   = google_network_security_mirroring_deployment_group.oob_mdg.id
+  provider                    = google-beta
+  mirroring_endpoint_group_id = "crm-meg"
+  location                    = "global"
+  mirroring_deployment_group  = google_network_security_mirroring_deployment_group.oob_mdg.id
 }
 
 # 5. Mirroring Endpoint Group Association
@@ -60,16 +60,16 @@ resource "google_network_security_mirroring_endpoint_group_association" "oob_meg
   provider                                = google-beta
   mirroring_endpoint_group_association_id = "crm-mega"
   location                                = "global"
-  mirroring_endpoint_group               = google_network_security_mirroring_endpoint_group.oob_meg.id
-  network                                = google_compute_network.crm_vpc.id
+  mirroring_endpoint_group                = google_network_security_mirroring_endpoint_group.oob_meg.id
+  network                                 = google_compute_network.crm_vpc.id
 }
 
 # 6. Security Profile
 resource "google_network_security_security_profile" "oob_sp" {
-  provider   = google-beta
-  name       = "crm-mirroring-profile"
-  location   = "global"
-  type       = "CUSTOM_MIRRORING"
+  provider = google-beta
+  name     = "crm-mirroring-profile"
+  location = "global"
+  type     = "CUSTOM_MIRRORING"
   custom_mirroring_profile {
     mirroring_endpoint_group = google_network_security_mirroring_endpoint_group.oob_meg.id
   }
@@ -77,10 +77,10 @@ resource "google_network_security_security_profile" "oob_sp" {
 
 # 7. Security Profile Group
 resource "google_network_security_security_profile_group" "oob_spg" {
-  provider                     = google-beta
-  name                         = "crm-mirroring-spg"
-  location                     = "global"
-  custom_mirroring_profile    = google_network_security_security_profile.oob_sp.id
+  provider                 = google-beta
+  name                     = "crm-mirroring-spg"
+  location                 = "global"
+  custom_mirroring_profile = google_network_security_security_profile.oob_sp.id
 }
 
 # 8. Network Firewall Policy
@@ -92,13 +92,13 @@ resource "google_compute_network_firewall_policy" "oob_policy" {
 
 # 9. Firewall Policy Rule (Mirroring all traffic to CRM Backend VM)
 resource "google_compute_network_firewall_policy_rule" "oob_rule" {
-  provider                = google-beta
-  firewall_policy         = google_compute_network_firewall_policy.oob_policy.name
-  rule_name               = "mirror-crm-backend"
-  priority                = 1000
-  action                  = "mirror"
-  direction               = "INGRESS"
-  security_profile_group  = google_network_security_security_profile_group.oob_spg.id
+  provider               = google-beta
+  firewall_policy        = google_compute_network_firewall_policy.oob_policy.name
+  rule_name              = "mirror-crm-backend"
+  priority               = 1000
+  action                 = "mirror"
+  direction              = "INGRESS"
+  security_profile_group = google_network_security_security_profile_group.oob_spg.id
 
   match {
     dest_ip_ranges = [google_compute_address.crm_backend_static_ip.address]

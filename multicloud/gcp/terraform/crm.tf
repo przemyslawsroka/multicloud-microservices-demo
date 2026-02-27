@@ -8,6 +8,16 @@ resource "google_compute_network" "crm_vpc" {
   description             = "Dedicated VPC for CRM service"
 }
 
+# 1a. Enable VPC Flow Logs for CRM network (100% sampling)
+resource "google_network_management_vpc_flow_logs_config" "crm_vpc_flow_logs" {
+  vpc_flow_logs_config_id = "crm-vpc-flow-logs"
+  location                = "global"
+  network                 = google_compute_network.crm_vpc.id
+  state                   = "ENABLED"
+  flow_sampling           = 1.0
+  aggregation_interval    = "INTERVAL_5_SEC"
+}
+
 # 2. Create a subnet in the CRM VPC
 resource "google_compute_subnetwork" "crm_subnet" {
   name          = "crm-subnet"

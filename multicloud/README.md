@@ -41,6 +41,7 @@ The architectural overview, system blueprints, and detailed networking diagrams 
    gcloud services enable cloudbuild.googleapis.com
    gcloud services enable vpcaccess.googleapis.com
    gcloud services enable servicenetworking.googleapis.com
+   gcloud services enable networkmanagement.googleapis.com
    ```
 
 ### Azure Deployment

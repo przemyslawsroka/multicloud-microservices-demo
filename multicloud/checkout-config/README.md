@@ -1,6 +1,6 @@
 # Multicloud Checkout Service Configuration
 
-The `checkoutservice` is the central service that orchestrates calls to the external multicloud business APIs. Whenever a simulated user places an order, the `checkoutservice` reaches out to the integrated services in AWS, Azure, and GCP.
+The `checkoutservice` is the central service that orchestrates calls to the external multicloud business APIs. Whenever a simulated user places an order, the `checkoutservice` reaches out to the integrated services across Azure and GCP.
 
 ## Testing Your Configuration
 
@@ -24,14 +24,18 @@ Alternatively, you can edit your deployments directly in `kubernetes-manifests/c
 
 ```yaml
 env:
-- name: AWS_ACCOUNTING_URL
-  value: "http://<YOUR_AWS_IP>:8080"
 - name: AZURE_ANALYTICS_URL
   value: "http://<YOUR_AZURE_IP>:8080"
 - name: GCP_CRM_URL
   value: "http://<YOUR_GCP_IP>:8080"
 - name: GCP_INVENTORY_URL
   value: "http://<YOUR_GCP_PSC_IP>:8080"
+- name: GCP_FURNITURE_URL
+  value: "http://<YOUR_GCP_FURNITURE_IP>:8080"
+- name: GCP_WAREHOUSE_URL
+  value: "https://<YOUR_GCP_WAREHOUSE_URL>"
+- name: GCP_ACCOUNTING_URL
+  value: "https://<YOUR_GCP_ACCOUNTING_URL>"
 ```
 
 ## Verifying Integration

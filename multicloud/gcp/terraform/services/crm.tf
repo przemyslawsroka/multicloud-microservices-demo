@@ -175,7 +175,7 @@ resource "google_compute_instance" "crm_vm" {
   }
 
   # Startup script from external file
-  metadata_startup_script = file("${path.module}/crm-backend/startup.sh")
+  metadata_startup_script = file("${path.module}/../../crm-backend/startup.sh")
 }
 
 # Output the private IP address for internal communication
@@ -267,7 +267,7 @@ resource "google_compute_instance" "crm_frontend_vm" {
   }
 
   # Startup script from external file
-  metadata_startup_script = file("${path.module}/crm-frontend/startup.sh")
+  metadata_startup_script = file("${path.module}/../../crm-frontend/startup.sh")
 }
 
 # 10. Create instance group for the frontend VM
@@ -437,7 +437,7 @@ resource "google_compute_instance" "crm_status_vm" {
   }
 
   # Startup script from external file
-  metadata_startup_script = file("${path.module}/crm-status/startup.sh")
+  metadata_startup_script = file("${path.module}/../../crm-status/startup.sh")
 }
 
 # 21. Firewall rule to allow HTTP traffic from internet to status VM

@@ -87,7 +87,7 @@ resource "google_compute_instance" "inventory_vm" {
   }
   
   # Startup script from external file
-  metadata_startup_script = file("${path.module}/inventory-service/startup.sh")
+  metadata_startup_script = file("${path.module}/../../inventory-service/startup.sh")
 }
 
 # 6. Create PSC service attachment (expose inventory service via PSC)

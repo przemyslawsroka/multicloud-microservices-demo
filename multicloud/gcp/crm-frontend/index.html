@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional CRM System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; display: flex; height: 100vh; overflow: hidden; margin: 0; }
+        
+        /* Sidebar Styling */
+        .sidebar { background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%); color: white; width: 250px; flex-shrink: 0; display: flex; flex-direction: column; }
+        .sidebar .brand { padding: 20px 24px; font-size: 1.25rem; font-weight: 700; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 15px 24px; border-radius: 0; transition: all 0.2s; cursor: pointer; display: flex; align-items: center; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background: rgba(255,255,255,0.1); border-left: 4px solid #fff; }
+        .sidebar .nav-link i { margin-right: 15px; font-size: 1.1rem; }
+        
+        /* Main Content Styling */
+        .main-content { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .topbar { background: white; padding: 15px 30px; border-bottom: 1px solid #edf2f9; display: flex; justify-content: flex-end; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .content-area { padding: 30px; }
+        
+        /* Card Styling */
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 24px; }
+        .card-header { background-color: white; border-bottom: 1px solid #edf2f9; padding: 20px 24px; border-radius: 12px 12px 0 0 !important; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Statistics Cards */
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 15px; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: #343a40; margin-bottom: 5px; }
+        .stat-label { color: #6c757d; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; }
+        
+        /* Tables */
+        .table th { background-color: #f8f9fa; color: #495057; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; border-top: none; }
+        .table td { vertical-align: middle; color: #343a40; }
+        .btn-primary { background: #2a5298; border: none; }
+        .btn-primary:hover { background: #1e3c72; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; color: white; margin-right: 12px; }
+        .action-icon { cursor: pointer; color: #6c757d; transition: color 0.2s; margin: 0 5px; font-size: 1.1rem; }
+        .action-icon:hover { color: #1e3c72; }
+        .delete-icon:hover { color: #dc3545; }
+        .loading-overlay { display: none; text-align: center; padding: 40px; }
+        
+        /* Views */
+        .view-section { display: none; }
+        .view-section.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand"><i class="bi bi-briefcase-fill me-2"></i> Cloud CRM Pro</div>
+        <div class="mt-4">
+            <div class="nav-link active" data-target="dashboard"><i class="bi bi-speedometer2"></i> Dashboard</div>
+            <div class="nav-link" data-target="customers"><i class="bi bi-people-fill"></i> Customers</div>
+            <div class="nav-link" data-target="orders"><i class="bi bi-box-seam"></i> Orders</div>
+        </div>
+        <div class="mt-auto p-4 text-center">
+            <span class="badge bg-light text-dark"><i class="bi bi-hdd-network"></i> Status: Connected</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="topbar">
+            <div class="text-muted small"><i class="bi bi-clock me-1"></i> <span id="clockData"></span></div>
+        </div>
+        
+        <div class="content-area">
+            
+            <!-- Dashboard View -->
+            <div id="dashboard" class="view-section active">
+                <h4 class="mb-4 text-dark">System Overview</h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card stat-card p-4">
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-people-fill"></i></div>
+                            <div class="stat-value" id="statCustomers">...</div>
+                            <div class="stat-label">Total Customers</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card stat-card p-4">
+                            <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-box-seam-fill"></i></div>
+                            <div class="stat-value" id="statOrders">...</div>
+                            <div class="stat-label">Total Orders</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card stat-card p-4">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-cash-stack"></i></div>
+                            <div class="stat-value" id="statRevenue">...</div>
+                            <div class="stat-label">Lifetime Revenue</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-2">
+                    <div class="card-header">
+                        Recent Activity
+                        <button class="btn btn-sm btn-light" onclick="loadStats()"><i class="bi bi-arrow-clockwise"></i> Sync</button>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted"><i class="bi bi-info-circle me-2"></i> The system is automatically synchronized with the Google Cloud Ecommerce Backend.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customers View -->
+            <div id="customers" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <div>Customer Directory <span class="badge bg-secondary ms-2" id="customerCount">0</span></div>
+                        <div>
+                            <button class="btn btn-light btn-sm me-2" onclick="loadCustomers()"><i class="bi bi-arrow-clockwise"></i></button>
+                            <button class="btn btn-primary btn-sm" onclick="openCustomerModal()"><i class="bi bi-person-plus-fill me-1"></i> Add Customer</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="loadingCustomers" class="loading-overlay"><div class="spinner-border text-primary"></div></div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="customersTable" style="display:none;">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Customer</th>
+                                        <th>Status</th>
+                                        <th>Orders</th>
+                                        <th>Added Date</th>
+                                        <th class="text-end pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customerList"></tbody>
+                            </table>
+                        </div>
+                        <div id="emptyCustomers" class="text-center py-5" style="display:none;">
+                            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 text-dark">No customers found</h5>
+                            <button class="btn btn-primary mt-3" onclick="openCustomerModal()">Add Your First Customer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders View -->
+            <div id="orders" class="view-section">
+                <div class="card">
+                    <div class="card-header">
+                        <div>Order Ledger <span class="badge bg-secondary ms-2" id="orderCountBadge">0</span></div>
+                        <div>
+                            <button class="btn btn-light btn-sm me-2" onclick="loadOrders()"><i class="bi bi-arrow-clockwise"></i></button>
+                            <button class="btn btn-primary btn-sm" onclick="openOrderModal()"><i class="bi bi-plus-circle-fill me-1"></i> Record Physical Order</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="loadingOrders" class="loading-overlay"><div class="spinner-border text-primary"></div></div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="ordersTable" style="display:none;">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Tracking ID</th>
+                                        <th>Financials</th>
+                                        <th>Date</th>
+                                        <th class="text-end pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersList"></tbody>
+                            </table>
+                        </div>
+                        <div id="emptyOrders" class="text-center py-5" style="display:none;">
+                            <i class="bi bi-box-seam text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 text-dark">No orders found</h5>
+                            <button class="btn btn-primary mt-3" onclick="openOrderModal()">Initialize Order Ledger</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Customer Modal -->
+    <div class="modal fade" id="customerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content shadow border-0">
+                <div class="modal-header bg-light"><h5 class="modal-title" id="custModalTitle">Add Customer</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="customerForm">
+                        <input type="hidden" id="customerId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3"><label class="form-label text-muted small fw-bold">FIRST NAME</label><input type="text" class="form-control" id="customerName" required></div>
+                            <div class="col-md-6 mb-3"><label class="form-label text-muted small fw-bold">LAST NAME</label><input type="text" class="form-control" id="customerSurname" required></div>
+                        </div>
+                        <div class="mb-3"><label class="form-label text-muted small fw-bold">EMAIL ADDRESS</label><input type="email" class="form-control" id="customerEmail"></div>
+                        <div class="mb-3"><label class="form-label text-muted small fw-bold">PHYSICAL ADDRESS</label><input type="text" class="form-control" id="customerAddress"></div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 bg-light"><button class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" onclick="saveCustomer()">Save Customer</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Modal -->
+    <div class="modal fade" id="orderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content shadow border-0">
+                <div class="modal-header bg-light"><h5 class="modal-title" id="orderModalTitle">Record Order Manually</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="orderForm">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">SELECT CUSTOMER</label>
+                            <select class="form-select" id="orderCustomerId" required><option value="">Loading...</option></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">INTERNAL ORDER ID</label>
+                            <input type="text" class="form-control font-monospace" id="orderId" placeholder="e.g. 8f6ab..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">TRACKING PROVIDER ID</label>
+                            <input type="text" class="form-control font-monospace" id="trackingId" placeholder="e.g. UPS-123">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3"><label class="form-label text-muted small fw-bold">CURRENCY</label>
+                                <select class="form-select" id="orderCurrency"><option>USD</option><option>EUR</option><option>GBP</option></select>
+                            </div>
+                            <div class="col-md-4 mb-3"><label class="form-label text-muted small fw-bold">SHIPPING COST</label><input type="number" step="0.01" class="form-control" id="shippingCost" value="0.00"></div>
+                            <div class="col-md-4 mb-3"><label class="form-label text-muted small fw-bold">TOTAL REVENUE</label><input type="number" step="0.01" class="form-control" id="totalAmount" required></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 bg-light"><button class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" onclick="saveOrder()">Create Order</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+        <div id="sysToast" class="toast align-items-center text-white bg-success border-0" role="alert">
+            <div class="d-flex"><div class="toast-body" id="sysToastText"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API = { cust: '/api/customers', orders: '/api/orders', stats: '/api/stats' };
+        let modals = {}; let globalCustomers = [];
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            modals.customer = new bootstrap.Modal(document.getElementById('customerModal'));
+            modals.order = new bootstrap.Modal(document.getElementById('orderModal'));
+            modals.toast = new bootstrap.Toast(document.getElementById('sysToast'));
+            
+            // Navigation
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    const target = e.currentTarget.getAttribute('data-target');
+                    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(target).classList.add('active');
+                    
+                    if (target === 'dashboard') loadStats();
+                    if (target === 'customers') loadCustomers();
+                    if (target === 'orders') loadOrders();
+                });
+            });
+            
+            setInterval(() => document.getElementById('clockData').textContent = new Date().toLocaleString(), 1000);
+            loadStats();
+        });
+
+        function showToast(msg, err=false) {
+            const el = document.getElementById('sysToast');
+            el.className = 'toast align-items-center text-white border-0 ' + (err?'bg-danger':'bg-success');
+            document.getElementById('sysToastText').textContent = msg;
+            modals.toast.show();
+        }
+        function getAvatar(name) { return name ? name[0].toUpperCase() : '?'; }
+        function getColor(str) { const colors = ['#0d6efd','#198754','#dc3545','#6f42c1','#fd7e14']; return colors[(str?str.charCodeAt(0):0)%5]; }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(API.stats);
+                const data = await res.json();
+                document.getElementById('statCustomers').textContent = data.customers;
+                document.getElementById('statOrders').textContent = data.orders;
+                document.getElementById('statRevenue').textContent = '$' + (data.revenue || 0).toLocaleString(undefined,{minimumFractionDigits:2});
+            } catch(e) { console.error('Stats load failed', e); }
+        }
+
+        async function loadCustomers() {
+            document.getElementById('loadingCustomers').style.display='block'; document.getElementById('customersTable').style.display='none'; document.getElementById('emptyCustomers').style.display='none';
+            try {
+                const res = await fetch(API.cust); globalCustomers = await res.json();
+                document.getElementById('customerCount').textContent = globalCustomers.length;
+                if(globalCustomers.length===0) { document.getElementById('emptyCustomers').style.display='block'; } else {
+                    const tbody = document.getElementById('customerList'); tbody.innerHTML='';
+                    globalCustomers.forEach(c => {
+                        const tr = document.createElement('tr');
+                        const adr = c.address ? \`<div class="small text-muted"><i class="bi bi-geo-alt"></i> \${c.address}</div>\` : (c.email ? \`<div class="small text-muted"><i class="bi bi-envelope"></i> \${c.email}</div>\`:'');
+                        const ords = c.Orders && c.Orders.length>0 ? \`<span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="bi bi-box-seam me-1"></i>\${c.Orders.length}</span>\` : '<span class="text-muted small">0</span>';
+                        tr.innerHTML = \`
+                            <td class="ps-4"><div class="d-flex align-items-center"><div class="avatar" style="background-color:\${getColor(c.name)}">\${getAvatar(c.name)}</div><div><div class="fw-bold">\${c.name} \${c.surname}</div><div class="small text-muted">ID: \${c.id}</div>\${adr}</div></div></td>
+                            <td><span class="badge bg-success bg-opacity-10 text-success border border-success">Active</span></td>
+                            <td>\${ords}</td><td><span class="text-muted small">\${new Date(c.createdAt).toLocaleDateString()}</span></td>
+                            <td class="text-end pe-4"><i class="bi bi-pencil-square action-icon" onclick="openCustomerModal('\${c.id}')"></i> <i class="bi bi-trash action-icon delete-icon" onclick="deleteCustomer('\${c.id}')"></i></td>
+                        \`; tbody.appendChild(tr);
+                    });
+                    document.getElementById('customersTable').style.display='table';
+                }
+            } catch(e) { showToast('Error load', true); } finally { document.getElementById('loadingCustomers').style.display='none'; }
+        }
+
+        async function loadOrders() {
+            document.getElementById('loadingOrders').style.display='block'; document.getElementById('ordersTable').style.display='none'; document.getElementById('emptyOrders').style.display='none';
+            try {
+                const res = await fetch(API.orders); const orders = await res.json();
+                document.getElementById('orderCountBadge').textContent = orders.length;
+                if(orders.length===0) { document.getElementById('emptyOrders').style.display='block'; } else {
+                    const tbody = document.getElementById('ordersList'); tbody.innerHTML='';
+                    orders.forEach(o => {
+                        const tr = document.createElement('tr');
+                        const c = o.Customer || {name:'Unknown', surname:''};
+                        tr.innerHTML = \`
+                            <td class="ps-4"><span class="font-monospace text-primary small">\${o.orderId.substring(0,12)}...</span></td>
+                            <td><div class="fw-bold">\${c.name} \${c.surname}</div><div class="small text-muted">Cust ID: \${o.CustomerId}</div></td>
+                            <td>\${o.trackingId ? \`<span class="badge bg-info bg-opacity-10 text-info border border-info">\${o.trackingId}</span>\`:'-'}</td>
+                            <td><div class="fw-bold">\${o.currency} \${o.totalAmount.toFixed(2)}</div><div class="small text-muted">Shipping: \${o.currency} \${o.shippingCost}</div></td>
+                            <td><span class="small text-muted">\${new Date(o.createdAt).toLocaleString()}</span></td>
+                            <td class="text-end pe-4"><i class="bi bi-trash action-icon delete-icon" onclick="deleteOrder('\${o.id}')"></i></td>
+                        \`; tbody.appendChild(tr);
+                    });
+                    document.getElementById('ordersTable').style.display='table';
+                }
+            } catch(e) { showToast('Error load', true); } finally { document.getElementById('loadingOrders').style.display='none'; }
+        }
+
+        function openCustomerModal(id) {
+            document.getElementById('custModalTitle').textContent = id ? 'Edit Customer' : 'Add Customer';
+            if (id) {
+                const c = globalCustomers.find(x => String(x.id)===String(id));
+                document.getElementById('customerId').value = c.id;
+                document.getElementById('customerName').value = c.name;
+                document.getElementById('customerSurname').value = c.surname;
+                document.getElementById('customerEmail').value = c.email || '';
+                document.getElementById('customerAddress').value = c.address || '';
+            } else { document.getElementById('customerForm').reset(); document.getElementById('customerId').value=''; }
+            modals.customer.show();
+        }
+
+        async function openOrderModal() {
+            document.getElementById('orderForm').reset();
+            const res = await fetch(API.cust); const custs = await res.json();
+            const sel = document.getElementById('orderCustomerId'); sel.innerHTML = '<option value="">Select customer...</option>';
+            custs.forEach(c => sel.innerHTML += \`<option value="\${c.id}">\${c.name} \${c.surname} (ID:\${c.id})</option>\`);
+            // generate random order id
+            document.getElementById('orderId').value = Math.random().toString(36).substring(2,15) + Math.random().toString(36).substring(2,15);
+            modals.order.show();
+        }
+
+        async function saveCustomer() {
+            const id = document.getElementById('customerId').value;
+            const data = {
+                name: document.getElementById('customerName').value, surname: document.getElementById('customerSurname').value,
+                email: document.getElementById('customerEmail').value, address: document.getElementById('customerAddress').value
+            };
+            if(!data.name || !data.surname) return showToast('Name/Surname required', true);
+            try {
+                const res = await fetch(id ? \`\${API.cust}/\${id}\` : API.cust, { method: id?'PUT':'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+                if (res.ok) { showToast('Customer saved!'); modals.customer.hide(); loadCustomers(); loadStats(); } else throw new Error();
+            } catch(e) { showToast('Error saving', true); }
+        }
+
+        async function saveOrder() {
+            const data = {
+                CustomerId: document.getElementById('orderCustomerId').value, orderId: document.getElementById('orderId').value,
+                trackingId: document.getElementById('trackingId').value, currency: document.getElementById('orderCurrency').value,
+                shippingCost: parseFloat(document.getElementById('shippingCost').value), totalAmount: parseFloat(document.getElementById('totalAmount').value)
+            };
+            if(!data.CustomerId || !data.orderId || isNaN(data.totalAmount)) return showToast('Fill required fields', true);
+            try {
+                const res = await fetch(API.orders, { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+                if (res.ok) { showToast('Order created!'); modals.order.hide(); loadOrders(); loadStats(); } else throw new Error();
+            } catch(e) { showToast('Error saving', true); }
+        }
+
+        async function deleteCustomer(id) { if(confirm('Delete customer?')) { await fetch(\`\${API.cust}/\${id}\`, {method:'DELETE'}); loadCustomers(); loadStats(); } }
+        async function deleteOrder(id) { if(confirm('Delete order?')) { await fetch(\`\${API.orders}/\${id}\`, {method:'DELETE'}); loadOrders(); loadStats(); } }
+    </script>
+</body>
+</html>

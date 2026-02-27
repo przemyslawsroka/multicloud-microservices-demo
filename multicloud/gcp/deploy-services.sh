@@ -5,7 +5,7 @@ echo "======================================"
 echo " Deploying Multicloud Services (GCP)"
 echo "======================================"
 
-cd "$(dirname "$0")/terraform/services"
+cd "$(dirname "$0")/terraform"
 
 # Verify tfvars exists
 if [ ! -f "terraform.tfvars" ]; then

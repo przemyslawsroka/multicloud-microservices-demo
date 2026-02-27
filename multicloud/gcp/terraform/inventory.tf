@@ -87,11 +87,11 @@ resource "google_compute_instance" "inventory_vm" {
   }
   
   # Startup script from external file
-  metadata_startup_script = file("${path.module}/../../inventory-service/startup.sh")
+  metadata_startup_script = file("${path.module}/../inventory-service/startup.sh")
 
   metadata = {
-    app_js       = file("${path.module}/../../inventory-service/app.js")
-    package_json = file("${path.module}/../../inventory-service/package.json")
+    app_js       = file("${path.module}/../inventory-service/app.js")
+    package_json = file("${path.module}/../inventory-service/package.json")
   }
 }
 

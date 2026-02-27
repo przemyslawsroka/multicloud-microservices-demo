@@ -1,4 +1,4 @@
-# analytics.tf - Azure Analytics Service Infrastructure
+# analytics.tf - Azure Fraud Detection Service Infrastructure
 
 # Configure Terraform providers for Azure and for generating a random password
 terraform {
@@ -27,27 +27,27 @@ provider "azurerm" {
 
 # 1. Create a resource group to hold all our resources
 resource "azurerm_resource_group" "rg" {
-  name     = "tf-analytics-service-rg"
+  name     = "tf-fraud-service-rg"
   location = "West Europe" # You can change this to a region closer to you
 }
 
 # 2. Create the networking infrastructure
 resource "azurerm_virtual_network" "vnet" {
-  name                = "analytics-vnet"
+  name                = "fraud-vnet"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
 
 resource "azurerm_subnet" "subnet" {
-  name                 = "analytics-subnet"
+  name                 = "fraud-subnet"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_public_ip" "pip" {
-  name                = "analytics-pip"
+  name                = "fraud-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
@@ -56,7 +56,7 @@ resource "azurerm_public_ip" "pip" {
 
 # 3. Create a network security group (firewall) to allow HTTP on port 8080
 resource "azurerm_network_security_group" "nsg" {
-  name                = "analytics-nsg"
+  name                = "fraud-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -75,7 +75,7 @@ resource "azurerm_network_security_group" "nsg" {
 
 # 4. Create a network interface to connect the VM to the network
 resource "azurerm_network_interface" "nic" {
-  name                = "analytics-nic"
+  name                = "fraud-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -101,12 +101,12 @@ resource "random_password" "password" {
 
 # 5. Create the Linux Virtual Machine
 resource "azurerm_linux_virtual_machine" "vm" {
-  name                  = "analytics-service-vm"
-  resource_group_name   = azurerm_resource_group.rg.name
-  location              = azurerm_resource_group.rg.location
-  size                  = "Standard_B1s" # A cheap, burstable VM size
-  admin_username        = "azureuser"
-  admin_password        = random_password.password.result
+  name                            = "fraud-service-vm"
+  resource_group_name             = azurerm_resource_group.rg.name
+  location                        = azurerm_resource_group.rg.location
+  size                            = "Standard_B1s" # A cheap, burstable VM size
+  admin_username                  = "azureuser"
+  admin_password                  = random_password.password.result
   disable_password_authentication = false
 
   network_interface_ids = [
@@ -139,7 +139,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
     cat <<'EOF' > package.json
     {
-      "name": "mock-analytics-service",
+      "name": "mock-fraud-detection-service",
       "version": "1.0.0",
       "main": "app.js",
       "dependencies": { "express": "^4.18.2" }
@@ -153,13 +153,13 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
     app.use(express.json());
 
-    // In-memory data store with two mocked metrics
-    let metrics = [
-      { transactionType: 'user_login', durationMs: 85, success: true, timestamp: '2025-07-21T07:15:00Z' },
-      { transactionType: 'payment_processing', durationMs: 210, success: false, timestamp: '2025-07-21T07:16:30Z' }
+    // In-memory data store with two mocked risk signals
+    let riskSignals = [
+      { transactionType: 'user_login', durationMs: 85, success: true, riskScore: 'LOW', timestamp: '2025-07-21T07:15:00Z' },
+      { transactionType: 'payment_processing', durationMs: 210, success: false, riskScore: 'HIGH', timestamp: '2025-07-21T07:16:30Z' }
     ];
 
-    // POST endpoint to save a new transaction metric
+    // POST endpoint to save a new transaction risk signal
     app.post('/metrics', (req, res) => {
       const { transactionType, durationMs, success } = req.body;
 
@@ -167,49 +167,53 @@ resource "azurerm_linux_virtual_machine" "vm" {
         return res.status(400).json({ error: 'Invalid payload. Required fields: transactionType (string), durationMs (number), success (boolean).' });
       }
 
-      const newMetric = { 
+      // Simple mock logic: failed transactions or slow transactions get higher risk scores
+      const riskScore = (!success || durationMs > 500) ? 'HIGH' : (durationMs > 200 ? 'MEDIUM' : 'LOW');
+
+      const newSignal = { 
         transactionType, 
         durationMs, 
         success,
+        riskScore,
         timestamp: new Date().toISOString() // Add server-side timestamp
       };
-      metrics.push(newMetric);
+      riskSignals.push(newSignal);
       
-      // Cleanup: Keep only the 10 most recent metrics
-      if (metrics.length > 10) {
-        const removedCount = metrics.length - 10;
-        metrics = metrics.slice(-10); // Keep last 10
-        console.log(`POST /metrics - Cleaned up $${removedCount} old metric(s), keeping 10 most recent`);
+      // Cleanup: Keep only the 10 most recent risk signals
+      if (riskSignals.length > 10) {
+        const removedCount = riskSignals.length - 10;
+        riskSignals = riskSignals.slice(-10); // Keep last 10
+        console.log(`POST /metrics - Cleaned up $${removedCount} old signal(s), keeping 10 most recent`);
       }
       
-      console.log(`POST /metrics - Added new metric for $${transactionType} ($${durationMs}ms). Total: $${metrics.length}`);
-      res.status(201).json(newMetric);
+      console.log(`POST /metrics - Analyzed new transaction for $${transactionType} ($${durationMs}ms) => Risk: $${riskScore}. Total records: $${riskSignals.length}`);
+      res.status(201).json(newSignal);
     });
 
-    // GET endpoint to list all metrics and a summary
+    // GET endpoint to list all risk signals and a summary
     app.get('/metrics', (req, res) => {
-      if (metrics.length === 0) {
-        return res.status(200).json({ summary: { totalTransactions: 0 }, data: [] });
+      if (riskSignals.length === 0) {
+        return res.status(200).json({ summary: { totalTransactionsEvaluated: 0 }, data: [] });
       }
 
       const summary = {
-        totalTransactions: metrics.length,
-        successCount: metrics.filter(m => m.success).length,
-        failureCount: metrics.filter(m => !m.success).length,
-        averageDurationMs: Math.round(metrics.reduce((acc, m) => acc + m.durationMs, 0) / metrics.length)
+        totalTransactionsEvaluated: riskSignals.length,
+        highRiskCount: riskSignals.filter(m => m.riskScore === 'HIGH').length,
+        lowRiskCount: riskSignals.filter(m => m.riskScore === 'LOW').length,
+        averageDurationMs: Math.round(riskSignals.reduce((acc, m) => acc + m.durationMs, 0) / riskSignals.length)
       };
       
-      console.log('GET /metrics - Returning summary and data');
-      res.status(200).json({ summary, data: metrics });
+      console.log('GET /metrics - Returning fraud analysis summary and data');
+      res.status(200).json({ summary, data: riskSignals });
     });
 
     app.listen(port, '0.0.0.0', () => {
-      console.log(`Mock Analytics server listening on port $${port}`);
+      console.log(`Mock Fraud Detection Engine listening on port $${port}`);
     });
     EOF
 
     npm install
-    pm2 start app.js --name "analytics-app"
+    pm2 start app.js --name "fraud-engine-app"
   EOT
   )
 }
@@ -217,7 +221,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
 # 6. Output the public IP address and the full application URL
 output "public_ip" {
   value       = azurerm_public_ip.pip.ip_address
-  description = "The public IP address of the analytics server."
+  description = "The public IP address of the fraud detection server."
 }
 
 output "application_url" {

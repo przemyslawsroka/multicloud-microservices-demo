@@ -18,7 +18,7 @@ This folder contains Terraform configurations that deploy microservices across A
 The multicloud setup demonstrates modern microservices deployment patterns with various networking and compute options:
 
 ### Azure Services
-- **Analytics Service** (Performance metrics) - VM with Public IP
+- **Fraud Detection Engine** (Risk evaluation metrics) - VM with Public IP
 
 ### GCP Services
 - **CRM Service** (Customer relationship management) - VM in asia-east1
@@ -51,7 +51,7 @@ All VM services run Node.js applications on port 8080 with RESTful APIs.
 
 ### 1. Azure Analytics Service (`azure/analytics.tf`)
 
-**Purpose**: Collects and analyzes transaction performance metrics  
+**Purpose**: Evaluates transaction properties to detect potential fraud via ML signals  
 **Cloud Provider**: Microsoft Azure  
 **Instance**: Standard_B1s (burstable performance)  
 **Region**: West Europe  
@@ -788,7 +788,7 @@ These services create a complete multicloud ecommerce platform:
 2. **Check inventory** → Warehouse service calls Inventory service (Direct VPC Egress)
 3. **Customer checkout** → Checkout service orchestrates the flow
 4. **Record transaction** → Accounting service saves transaction + fetches CRM data (VPC Connector)
-5. **Track metrics** → Analytics service records performance data
+5. **Risk Analysis Enforcement** → Fraud Detection Engine evaluates transaction risk securely over VPN tunnel
 6. **Update inventory** → Inventory service reserves/releases stock via PSC
 
 ### Key Integration Points

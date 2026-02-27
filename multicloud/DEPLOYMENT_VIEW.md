@@ -10,6 +10,7 @@ A core component of the "Online Boutique" demonstration is emphasizing *multi-re
 
 ### 1.1 `us-central1` (Iowa) - Core Compute & Finance
 *   **GKE Cluster (`online-boutique-cluster`)**: Hosts the primary storefront and the `checkoutservice` orchestrator.
+*   **Vertex AI Agent Engine (`crm-concierge`)**: AI compute container utilizing the `gemini-3-flash-preview` foundational model and the Google ADK.
 *   **Accounting Service**: Serverless Cloud Run application routing financial payloads. Connects to the CRM network via a Serverless VPC Access Connector.
 *   **Furniture Service (`furniture-vpc`)**: Legacy VM-based inventory for freight items connected to the GKE cluster via HA Cloud VPN.
 

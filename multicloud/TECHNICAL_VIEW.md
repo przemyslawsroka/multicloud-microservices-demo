@@ -44,6 +44,14 @@ The core challenge of this architecture is bridging modern serverless technologi
 11. **Event Broker $\rightarrow$ Data Warehouse (BigQuery)**: 
     - A direct BigQuery Pub/Sub Subscription ingests all event logs purely asynchronously, requiring zero compute overhead from the GKE cluster.
 
+### Phase 6: Agentic AI Integration (MCP & ADK)
+12. **Frontend UI $\rightarrow$ AI Concierge (Agent Engine)**:
+    - The custom Concierge Chat Widget interacts with the `frontend_concierge` agent securely over REST HTTP mimicking the Agent Engine framework wrapper.
+13. **AI Concierge $\rightarrow$ Back-Office CRM Agent (Agent-to-Agent)**:
+    - The concierge utilizes A2A delegation to securely proxy logic off to the `crm_investigator` for private data lookups, isolating user prompts securely.
+14. **Back-Office CRM Agent $\rightarrow$ CRM Service (MCP)**:
+    - The investigator utilizes the Model Context Protocol (MCP) securely over SSE to execute deterministic database tooling (`lookup_customer`, `find_order`) directly against the CRM Node backend.
+
 ---
 
 ## 2. Component Technical Profiles
@@ -55,6 +63,7 @@ The core challenge of this architecture is bridging modern serverless technologi
 | **OrderManagement**| GCP Cloud Run | Node.js | Triggered via `POST /` | Serverless Scale |
 | **Apigee API**| Google Cloud API | SaaS API Management | Reverse Proxying / Auth | Token Caches |
 | **Partner API** | GCP Cloud Run | Node.js (TS) | `POST /tracking`, `GET /catalog` | Serverless Scale |
+| **CRM Concierge**| GCP Vertex AI | TypeScript (ADK) | `POST /v1/chat` | LLM Session |
 | **CRM** | GCP Compute VM | Node.js (Express) | `GET /customers` | Local SQLite/CloudSQL |
 | **Inventory**| GCP Compute VM | Node.js (Express) | `GET /inventory`, `PUT` | Memory / Disk |
 | **Warehouse**| GCP Cloud Run | Node.js (Express) | `POST /shipments` | Stateless |

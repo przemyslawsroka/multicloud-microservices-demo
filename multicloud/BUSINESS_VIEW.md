@@ -39,3 +39,8 @@ External collaborations utilizing secure, public-facing developer APIs.
 
 ### 2.6 Enterprise Data Intelligence
 *   **Data Warehouse**: The primary enterprise data lake. It continuously aggregates telemetry, financial ledgers, logistics data, and user events from across the entire microservice ecosystem to drive executive business intelligence (BI) dashboards, generate compliance reports, and train predictive machine learning models.
+
+### 2.7 AI Agentic Customer Service
+Deployment of the Google ADK and Vertex AI for intelligent query resolution.
+*   **Frontend Concierge**: An intelligent, user-facing Chat Widget integrated into the CRM Dashboard that provides conversational context natively.
+*   **Back-Office Investigator**: A highly constrained internal worker agent, isolated from the user, that securely executes real-time semantic database lookups via Model Context Protocol (MCP) without compromising raw data boundaries.

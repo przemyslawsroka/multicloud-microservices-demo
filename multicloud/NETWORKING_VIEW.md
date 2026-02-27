@@ -65,3 +65,8 @@ Modern serverless compute naturally boots outside of user-defined VPCs. We demon
 **Component & Target:** ERP Systems (GCP GCP) $\rightarrow$ Fraud Detection Engine (Azure VM)
 *   **Design Profile**: Cross-cloud telemetry streaming routes through a fully managed Dedicated Interconnect or Carrier Interconnect, providing physical link aggregation directly into Azure.
 *   **Rationale**: Enterprise cross-cloud multi-vendor traffic requires BGP secured tunneling over dedicated physical bandwidth so that `10.x.x.x` (GCP) can natively ping `10.y.y.y` (Azure Virtual Network subnets) securely, bypassing internet routing and unpredictable latency entirely.
+
+### 4.4 Agent Machine-to-Machine (M2M) & MCP Networking
+**Component & Target:** Vertex AI Agent Engine $\rightarrow$ CRM Service (GCP VM)
+*   **Design Profile**: The ADK agents (`crmWorkerAgent`) securely tunnel precise semantic parameters using the standard **Model Context Protocol (MCP)** via Server-Sent Events (SSE) directly to the CRM backend (`http://localhost:9081/sse`), bypassing intermediate REST layers.
+*   **Rationale**: Exposing private database tools requires high architectural fidelity. MCP provides a standardized secure transport layer over SSE, strictly preventing prompt injections from executing unvalidated internal SQL commands while keeping the AI stateless.

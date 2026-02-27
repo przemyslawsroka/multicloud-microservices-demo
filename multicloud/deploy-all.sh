@@ -8,8 +8,8 @@ echo "Prerequisite check: Make sure you've already deployed the primary GKE clus
 echo "by running 'terraform apply' in the root project folder ./terraform/ before continuing!"
 read -p "Press enter to continue or Ctrl+C to abort..."
 
-# 1. Deploy Azure Analytics Service
-./azure/deploy-analytics.sh
+# 1. Deploy Azure Fraud Detection Engine
+./azure/deploy-fraud-detection.sh
 
 # 2. Deploy GCP Services (CRM, Inventory, Warehouse, Accounting)
 # These rely on information from both the core deployment and other modules

@@ -2,7 +2,7 @@
 set -e
 
 echo "======================================"
-echo " Deploying Output Analytics (Azure) "
+echo " Deploying Fraud Detection Engine (Azure) "
 echo "======================================"
 
 cd "$(dirname "$0")/terraform"

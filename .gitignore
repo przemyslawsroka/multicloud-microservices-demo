@@ -29,3 +29,4 @@ release/wi-kubernetes-manifests.yaml
 vendor/
 *.tfplan
 tfplan
+*.log

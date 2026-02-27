@@ -68,14 +68,14 @@ resource "google_storage_bucket" "crm_logs_bucket" {
   location      = "US-CENTRAL1"
   storage_class = "STANDARD"
   project       = var.project_id
-  
+
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
-  
+
   versioning {
     enabled = true
   }
-  
+
   lifecycle_rule {
     condition {
       age = 30
@@ -84,7 +84,7 @@ resource "google_storage_bucket" "crm_logs_bucket" {
       type = "Delete"
     }
   }
-  
+
   depends_on = [google_project_service.storage_api]
 }
 
@@ -180,6 +180,9 @@ resource "google_compute_instance" "crm_vm" {
   metadata = {
     app_js       = file("${path.module}/../crm-backend/app.js")
     package_json = file("${path.module}/../crm-backend/package.json")
+    db_host      = google_compute_address.crm_db_psc_ip.address
+    db_user      = google_sql_user.crm_user.name
+    db_pass      = random_password.crm_db_password.result
   }
 }
 

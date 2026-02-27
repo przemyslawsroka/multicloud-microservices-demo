@@ -52,7 +52,7 @@ resource "google_compute_firewall" "allow_cloud_run_to_inventory" {
   # Cloud Run uses these IP ranges when using Direct VPC egress
   source_ranges = ["10.1.0.0/24"]
   target_tags   = ["inventory-server"]
-  
+
   description = "Allow Cloud Run warehouse service to access inventory service"
 
   depends_on = [google_project_service.warehouse_apis]
@@ -60,9 +60,9 @@ resource "google_compute_firewall" "allow_cloud_run_to_inventory" {
 
 # Define the Cloud Run service
 resource "google_cloud_run_v2_service" "warehouse_api_service" {
-  name     = "warehouse-api-service"
-  location = "europe-west1"
-  project  = var.project_id
+  name                = "warehouse-api-service"
+  location            = "europe-west1"
+  project             = var.project_id
   deletion_protection = false
 
   template {
@@ -70,7 +70,7 @@ resource "google_cloud_run_v2_service" "warehouse_api_service" {
       # Note: You need to build and push the image first using:
       # cd multicloud/gcp/warehouse-service && gcloud builds submit --config=cloudbuild.yaml
       image = "europe-west1-docker.pkg.dev/${var.project_id}/warehouse-repo/warehouse-service:latest"
-      
+
       ports {
         container_port = 8080
       }
@@ -126,7 +126,7 @@ resource "google_cloud_run_v2_service_iam_member" "warehouse_noauth" {
   project  = google_cloud_run_v2_service.warehouse_api_service.project
   role     = "roles/run.invoker"
   member   = "allUsers"
-  
+
   depends_on = [google_cloud_run_v2_service.warehouse_api_service]
 }
 

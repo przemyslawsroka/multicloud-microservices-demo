@@ -37,12 +37,12 @@ resource "google_vpc_access_connector" "accounting_connector" {
   name          = "accounting-connector"
   region        = "us-central1"
   network       = data.google_compute_network.crm_vpc.name
-  ip_cidr_range = "10.3.1.0/28"  # Dedicated range for connector (16 IPs)
-  
+  ip_cidr_range = "10.3.1.0/28" # Dedicated range for connector (16 IPs)
+
   # Connector throughput settings
   min_throughput = 200  # Minimum 200 Mbps
-  max_throughput = 1000  # Maximum 1000 Mbps
-  
+  max_throughput = 1000 # Maximum 1000 Mbps
+
   project = var.project_id
 
   depends_on = [google_project_service.accounting_apis]
@@ -62,7 +62,7 @@ resource "google_compute_firewall" "allow_connector_to_crm" {
   # VPC Connector uses IPs from this range
   source_ranges = ["10.3.1.0/28"]
   target_tags   = ["crm-server"]
-  
+
   description = "Allow VPC Connector (accounting service) to access CRM service"
 
   depends_on = [google_project_service.accounting_apis]
@@ -79,7 +79,7 @@ resource "google_cloud_run_v2_service" "accounting_api_service" {
       # Note: You need to build and push the image first using:
       # cd multicloud/gcp/accounting-service && gcloud builds submit --config=cloudbuild.yaml
       image = "us-central1-docker.pkg.dev/${var.project_id}/accounting-repo/accounting-service:latest"
-      
+
       ports {
         container_port = 8080
       }
@@ -133,7 +133,7 @@ resource "google_cloud_run_v2_service_iam_member" "accounting_noauth" {
   project  = google_cloud_run_v2_service.accounting_api_service.project
   role     = "roles/run.invoker"
   member   = "allUsers"
-  
+
   depends_on = [google_cloud_run_v2_service.accounting_api_service]
 }
 

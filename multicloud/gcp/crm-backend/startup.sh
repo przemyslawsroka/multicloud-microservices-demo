@@ -27,107 +27,23 @@ cd /opt/app
 # Create the package.json file
 curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/package_json > package.json
 
-# Create the app.js file with the mock CRM logic
-cat <<'EOF' > app.js
-const express = require('express');
-const { Storage } = require('@google-cloud/storage');
+# Create the app.js file from metadata
+curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/app_js > app.js
 
-const app = express();
-const port = 8080;
-
-// Initialize Google Cloud Storage only in production
-let storage, bucket;
-if (process.env.NODE_ENV === 'production') {
-  storage = new Storage();
-  const BUCKET_NAME = 'crm-online-boutique-bucket';
-  bucket = storage.bucket(BUCKET_NAME);
-}
-
-// Async logging function
-async function logToGCS(logEntry) {
-  if (!bucket) {
-    // Silently fail in non-production environments
-    return;
-  }
-  try {
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `logs/${date}/${Date.now()}-${Math.random().toString(36).substring(7)}.json`;
-    await bucket.file(fileName).save(JSON.stringify(logEntry, null, 2));
-  } catch (error) {
-    console.error('Failed to write log to GCS:', error.message);
-  }
-}
-
-// Middleware to parse JSON bodies
-app.use(express.json());
-
-// Logging middleware - runs for all requests
-app.use((req, res, next) => {
-  const startTime = Date.now();
-  
-  res.on('finish', () => {
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      method: req.method,
-      path: req.path,
-      statusCode: res.statusCode,
-      responseTimeMs: Date.now() - startTime,
-      clientIp: req.ip,
-      userAgent: req.get('user-agent') || 'unknown'
-    };
-    
-    // Log asynchronously (don't wait)
-    logToGCS(logEntry).catch(err => console.error('Logging error:', err));
-  });
-  
-  next();
-});
-
-// In-memory data store with two hardcoded customers
-let customers = [
-  { name: 'John', surname: 'Doe' },
-  { name: 'Jane', surname: 'Smith' }
-];
-
-// GET endpoint to list all customers
-app.get('/customers', (req, res) => {
-  console.log('GET /customers - Returning customer list');
-  res.status(200).json(customers);
-});
-
-// POST endpoint to add a new customer
-app.post('/customers', (req, res) => {
-  const { name, surname } = req.body;
-
-  if (!name || !surname) {
-    console.log('POST /customers - Failed: Missing name or surname');
-    return res.status(400).json({ error: 'Name and surname are required.' });
-  }
-
-  const newCustomer = { name, surname };
-  customers.push(newCustomer);
-  
-  // Cleanup: Keep only the 10 most recent customers
-  if (customers.length > 10) {
-    const removedCount = customers.length - 10;
-    customers = customers.slice(-10); // Keep last 10
-    console.log(`POST /customers - Cleaned up ${removedCount} old customer(s), keeping 10 most recent`);
-  }
-  
-  console.log(`POST /customers - Added new customer: ${name} ${surname}. Total: ${customers.length}`);
-  res.status(201).json(newCustomer);
-});
-
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Mock CRM server listening on port ${port}`);
-});
-EOF
+# Retrieve database connection variables from metadata
+DB_HOST=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/db_host || echo "")
+DB_USER=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/db_user || echo "crm_user")
+DB_PASS=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/db_pass || echo "password123")
 
 # Install application dependencies
 npm install
 
 # Start the application using pm2 to run it in the background with NODE_ENV set
-NODE_ENV=production pm2 start app.js --name "crm-app"
+if [ -n "$DB_HOST" ]; then
+  DB_HOST=$DB_HOST DB_USER=$DB_USER DB_PASS=$DB_PASS NODE_ENV=production pm2 start app.js --name "crm-app"
+else
+  NODE_ENV=production pm2 start app.js --name "crm-app"
+fi
 
 # Save the PM2 process list and configure it to start on system boot
 pm2 save

@@ -37,16 +37,16 @@ resource "google_compute_subnetwork" "inventory_psc_subnet" {
 resource "google_compute_firewall" "inventory_internal" {
   name    = "inventory-allow-internal"
   network = google_compute_network.inventory_vpc.name
-  
+
   allow {
     protocol = "tcp"
     ports    = ["8080", "22", "80", "443"]
   }
-  
+
   allow {
     protocol = "icmp"
   }
-  
+
   source_ranges = ["10.0.0.0/8", "10.10.0.0/24", "10.128.0.0/24", "10.132.0.0/24", "130.211.0.0/22", "35.191.0.0/16", "10.69.128.0/17"]
   description   = "Allow internal traffic within inventory VPC and from PSC"
 }
@@ -55,13 +55,13 @@ resource "google_compute_firewall" "inventory_internal" {
 resource "google_compute_firewall" "inventory_psc" {
   name    = "inventory-allow-psc"
   network = google_compute_network.inventory_vpc.name
-  
+
   allow {
     protocol = "tcp"
     ports    = ["8080"]
   }
-  
-  source_ranges = ["35.199.192.0/19"]  # PSC source range
+
+  source_ranges = ["35.199.192.0/19"] # PSC source range
   description   = "Allow PSC connectivity to inventory service"
 }
 
@@ -70,22 +70,22 @@ resource "google_compute_instance" "inventory_vm" {
   name         = "inventory-service-vm"
   machine_type = "e2-small"
   zone         = "europe-west1-b"
-  
+
   tags = ["inventory-server"]
-  
+
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-12"
     }
   }
-  
+
   # Network interface with private IP only (no external IP)
   network_interface {
     network    = google_compute_network.inventory_vpc.id
     subnetwork = google_compute_subnetwork.inventory_subnet.id
     # No access_config block = no external IP
   }
-  
+
   # Startup script from external file
   metadata_startup_script = file("${path.module}/../inventory-service/startup.sh")
 
@@ -100,17 +100,17 @@ resource "google_compute_service_attachment" "inventory_psc_attachment" {
   name        = "inventory-psc-attachment"
   region      = "europe-west1"
   description = "PSC attachment for inventory service"
-  
+
   # Enable PSC
-  enable_proxy_protocol    = false
-  connection_preference    = "ACCEPT_MANUAL"
-  
+  enable_proxy_protocol = false
+  connection_preference = "ACCEPT_MANUAL"
+
   # Connect to the PSC subnet
   nat_subnets = [google_compute_subnetwork.inventory_psc_subnet.id]
-  
+
   # Target service (we'll use a load balancer)
   target_service = google_compute_forwarding_rule.inventory_forwarding_rule.id
-  
+
   # Allow connections from the online-boutique-vpc VPC project
   consumer_accept_lists {
     project_id_or_num = var.project_id
@@ -120,22 +120,22 @@ resource "google_compute_service_attachment" "inventory_psc_attachment" {
 
 # 7. Create internal load balancer for the inventory service
 resource "google_compute_forwarding_rule" "inventory_forwarding_rule" {
-  name   = "inventory-forwarding-rule"
-  region = "europe-west1"
+  name                  = "inventory-forwarding-rule"
+  region                = "europe-west1"
   load_balancing_scheme = "INTERNAL"
   backend_service       = google_compute_region_backend_service.inventory_backend.id
-  all_ports            = true
-  network              = google_compute_network.inventory_vpc.id
-  subnetwork           = google_compute_subnetwork.inventory_subnet.id
+  all_ports             = true
+  network               = google_compute_network.inventory_vpc.id
+  subnetwork            = google_compute_subnetwork.inventory_subnet.id
 }
 
 # 8. Create backend service
 resource "google_compute_region_backend_service" "inventory_backend" {
   name   = "inventory-backend-service"
   region = "europe-west1"
-  
+
   health_checks = [google_compute_region_health_check.inventory_health_check.id]
-  
+
   backend {
     group          = google_compute_instance_group.inventory_instance_group.id
     balancing_mode = "CONNECTION"
@@ -146,9 +146,9 @@ resource "google_compute_region_backend_service" "inventory_backend" {
 resource "google_compute_instance_group" "inventory_instance_group" {
   name = "inventory-instance-group"
   zone = "europe-west1-b"
-  
+
   instances = [google_compute_instance.inventory_vm.id]
-  
+
   named_port {
     name = "http"
     port = "8080"
@@ -159,10 +159,10 @@ resource "google_compute_instance_group" "inventory_instance_group" {
 resource "google_compute_region_health_check" "inventory_health_check" {
   name   = "inventory-health-check"
   region = "europe-west1"
-  
+
   timeout_sec        = 5
   check_interval_sec = 10
-  
+
   http_health_check {
     port         = "8080"
     request_path = "/health"
@@ -180,14 +180,14 @@ resource "google_compute_address" "inventory_psc_ip_europe" {
 
 # 12. Create PSC endpoint in europe-west1 (where GKE cluster is located)
 resource "google_compute_forwarding_rule" "inventory_psc_endpoint_europe" {
-  name   = "inventory-psc-endpoint-europe"
-  region = "europe-west1"
+  name                    = "inventory-psc-endpoint-europe"
+  region                  = "europe-west1"
   allow_psc_global_access = true
   load_balancing_scheme   = ""
-  target                = google_compute_service_attachment.inventory_psc_attachment.id
-  network               = "online-boutique-vpc"  # Connect from online-boutique-vpc network
-  ip_address            = google_compute_address.inventory_psc_ip_europe.self_link
-  
+  target                  = google_compute_service_attachment.inventory_psc_attachment.id
+  network                 = "online-boutique-vpc" # Connect from online-boutique-vpc network
+  ip_address              = google_compute_address.inventory_psc_ip_europe.self_link
+
   # This provides PSC access from europe-west1 region and as it is global, gke cluster from u-central1 should be able to access it
 }
 
@@ -222,4 +222,4 @@ output "inventory_psc_subnet_cidr" {
   description = "The CIDR range of the PSC subnet"
 }
 
- 
+

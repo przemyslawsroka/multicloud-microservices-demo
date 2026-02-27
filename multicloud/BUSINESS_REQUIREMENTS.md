@@ -4,7 +4,7 @@
 
 "Online Boutique" is a rapidly growing global e-commerce enterprise. Historically, the company operated on a monolithic architecture, but following recent corporate acquisitions and a drive toward modernization, the IT landscape has evolved into a distributed, multi-cloud microservices ecosystem. 
 
-The core storefront operates on a Google Kubernetes Engine (GKE) cluster. However, the business logic required to fulfill a customer order—checking stock, updating customer records, processing finances, and analyzing sales—is spread across discrete backend systems. Some of these systems run on Google Cloud Platform (GCP) virtual machines, some have been modernized to GCP serverless architectures (Cloud Run), and due to a recent merger, the company's entire analytics engine resides in Microsoft Azure.
+The core storefront operates on a Google Kubernetes Engine (GKE) cluster. However, the business logic required to fulfill a customer order—checking stock, updating customer records, processing finances, and evaluating fraud risk—is spread across discrete backend systems. Some of these systems run on Google Cloud Platform (GCP) virtual machines, some have been modernized to GCP serverless architectures (Cloud Run), while the company's proprietary fraud detection engine resides in Microsoft Azure following a recent merger.
 
 **The primary business objective** is to execute a seamless, real-time checkout process that orchestrates transactions across all these heterogeneous systems.
 
@@ -31,9 +31,11 @@ Newly developed systems utilizing serverless infrastructure for dynamic scaling.
 *   **Warehouse Service**: Handles complex shipping logistics and fulfillment dispatching.
 *   **Accounting Service**: Records financial ledgers, tax calculations, and revenue recognition.
 
-### 2.4 Data Intelligence (Microsoft Azure)
-*   **Analytics Service**: A real-time data ingestion engine that processes completed transactions to drive live executive sales dashboards and fraud-detection AI.
-*   **Data Warehouse / Data Lake**: Aggregates data from all services for business intelligence, reporting, and training machine learning models.
+### 2.4 Risk & Compliance (Microsoft Azure)
+*   **Fraud Detection Engine**: A real-time risk analysis system remaining in Azure following a corporate merger. It evaluates transaction metadata to compute risk scores, flag anomalous behavior, and prevent fraudulent orders before fulfillment.
+
+### 2.5 Enterprise Data Intelligence (GCP / BigQuery)
+*   **Data Warehouse (BigQuery)**: The primary, highly scalable enterprise data warehouse. It continuously aggregates telemetry, financial ledgers, logistics data, and user events from across the entire microservice ecosystem to drive executive business intelligence (BI) dashboards, generate compliance reports, and train predictive machine learning models.
 
 ---
 

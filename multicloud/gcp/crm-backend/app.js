@@ -138,6 +138,10 @@ app.delete('/customers/:id', async (req, res) => {
   }
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
 app.listen(port, '0.0.0.0', () => {
   console.log(`CRM Backend server listening on port ${port}`);
 });

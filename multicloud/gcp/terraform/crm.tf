@@ -186,10 +186,92 @@ resource "google_compute_instance" "crm_vm" {
   }
 }
 
+# ============================================================================
+# CRM BACKEND - Internal TCP Load Balancer
+# ============================================================================
+
+# Instance group for the backend VM
+resource "google_compute_instance_group" "crm_backend_group" {
+  name        = "crm-backend-instance-group"
+  description = "Instance group for CRM backend"
+  zone        = "asia-east1-a"
+
+  instances = [
+    google_compute_instance.crm_vm.id
+  ]
+
+  named_port {
+    name = "http8080"
+    port = "8080"
+  }
+}
+
+# Health check for backend
+resource "google_compute_health_check" "crm_backend_health_check" {
+  name                = "crm-backend-ilb-health-check"
+  check_interval_sec  = 10
+  timeout_sec         = 5
+  healthy_threshold   = 2
+  unhealthy_threshold = 3
+
+  http_health_check {
+    port         = 8080
+    request_path = "/health"
+  }
+}
+
+# Internal backend service
+resource "google_compute_region_backend_service" "crm_backend_service" {
+  name                  = "crm-backend-ilb-service"
+  region                = "asia-east1"
+  protocol              = "TCP"
+  load_balancing_scheme = "INTERNAL"
+  health_checks         = [google_compute_health_check.crm_backend_health_check.id]
+
+  backend {
+    group = google_compute_instance_group.crm_backend_group.id
+  }
+}
+
+# Reserve internal IP for the ILB
+resource "google_compute_address" "crm_backend_ilb_ip" {
+  name         = "crm-backend-ilb-ip"
+  subnetwork   = google_compute_subnetwork.crm_subnet.id
+  address_type = "INTERNAL"
+  region       = "asia-east1"
+  description  = "Static internal IP for CRM backend ILB"
+}
+
+# Forwarding rule
+resource "google_compute_forwarding_rule" "crm_backend_ilb_forwarding_rule" {
+  name                  = "crm-backend-ilb-forwarding-rule"
+  region                = "asia-east1"
+  load_balancing_scheme = "INTERNAL"
+  ports                 = ["8080"]
+  network               = google_compute_network.crm_vpc.id
+  subnetwork            = google_compute_subnetwork.crm_subnet.id
+  backend_service       = google_compute_region_backend_service.crm_backend_service.id
+  ip_address            = google_compute_address.crm_backend_ilb_ip.id
+}
+
+# Firewall rule for ILB health checks
+resource "google_compute_firewall" "crm_backend_allow_health_check" {
+  name    = "crm-backend-ilb-allow-health-check"
+  network = google_compute_network.crm_vpc.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  target_tags   = ["crm-server"]
+}
+
 # Output the private IP address for internal communication
 output "crm_service_url" {
-  value       = "http://${google_compute_address.crm_backend_static_ip.address}:8080/customers"
-  description = "The URL to access the CRM service via private IP."
+  value       = "http://${google_compute_address.crm_backend_ilb_ip.address}:8080/customers"
+  description = "The URL to access the CRM service via ILB."
 }
 
 output "crm_vm_private_ip" {
@@ -280,6 +362,7 @@ resource "google_compute_instance" "crm_frontend_vm" {
   metadata = {
     app_js       = file("${path.module}/../crm-frontend/app.js")
     package_json = file("${path.module}/../crm-frontend/package.json")
+    backend_url  = "http://${google_compute_address.crm_backend_ilb_ip.address}:8080/customers"
   }
 }
 
@@ -455,6 +538,7 @@ resource "google_compute_instance" "crm_status_vm" {
   metadata = {
     app_js       = file("${path.module}/../crm-status/app.js")
     package_json = file("${path.module}/../crm-status/package.json")
+    backend_url  = "http://${google_compute_address.crm_backend_ilb_ip.address}:8080/customers"
   }
 }
 

@@ -30,11 +30,18 @@ curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMeta
 # Create the status monitor app.js file
 curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/app_js > app.js
 
+# Retrieve backend url from metadata
+BACKEND_URL=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/backend_url || echo "")
+
 # Install application dependencies
 npm install
 
 # Start the application using pm2
-pm2 start app.js --name "crm-status"
+if [ -n "$BACKEND_URL" ]; then
+  BACKEND_URL=$BACKEND_URL pm2 start app.js --name "crm-status"
+else
+  pm2 start app.js --name "crm-status"
+fi
 pm2 startup
 pm2 save
 

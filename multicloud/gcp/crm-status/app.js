@@ -1,8 +1,8 @@
 const express = require('express');
 const app = express();
-const port = 80;
+const port = process.env.PORT || 80;
 
-const BACKEND_URL = 'http://10.3.0.2:8080/customers';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://10.3.0.2:8080/customers';
 
 // Proxy endpoint to fetch backend status
 app.get('/api/status', async (req, res) => {
@@ -306,7 +306,7 @@ app.get('/', (req, res) => {
                         throw new Error(data.error || 'Unknown backend error');
                     }
                 } else {
-                    throw new Error(`Frontend API error! status: ${response.status}`);
+                    throw new Error(\`Frontend API error! status: \${response.status}\`);
                 }
 
                 lastCheck.textContent = new Date().toLocaleString();

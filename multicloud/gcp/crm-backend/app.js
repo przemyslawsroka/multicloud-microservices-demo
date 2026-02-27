@@ -2,7 +2,7 @@ const express = require('express');
 const { Storage } = require('@google-cloud/storage');
 
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 // Initialize Google Cloud Storage only in production
 let storage, bucket;

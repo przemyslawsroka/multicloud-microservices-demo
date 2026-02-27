@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
+const EXTERNAL_BACKEND_URL = process.env.BACKEND_URL || 'http://10.3.0.2:8080/customers';
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -69,7 +70,7 @@ app.get('/', (req, res) => {
         const BACKEND_URL = '/api/customers';
         
         // Display backend URL (showing the proxied endpoint)
-        document.getElementById('backendUrl').textContent = BACKEND_URL + ' → http://10.3.0.2:8080/customers';
+        document.getElementById('backendUrl').textContent = BACKEND_URL + ' → ' + '${EXTERNAL_BACKEND_URL}';
         
         function getInitials(name, surname) { return (name.charAt(0) + surname.charAt(0)).toUpperCase(); }
         
@@ -156,7 +157,7 @@ app.get('/api/customers', async (req, res) => {
   try {
     // Use node-fetch for HTTP requests (compatible with Node < 18)
     const fetch = (await import('node-fetch')).default;
-    const response = await fetch('http://10.3.0.2:8080/customers');
+      const response = await fetch(EXTERNAL_BACKEND_URL);
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (error) {
@@ -169,7 +170,7 @@ app.get('/api/customers', async (req, res) => {
 app.post('/api/customers', async (req, res) => {
   try {
     const fetch = (await import('node-fetch')).default;
-    const response = await fetch('http://10.3.0.2:8080/customers', {
+      const response = await fetch(EXTERNAL_BACKEND_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)

@@ -1,0 +1,120 @@
+#!/bin/bash
+set -e
+
+# Log everything
+exec > >(tee /var/log/startup-script.log) 2>&1
+echo "Starting inventory service setup at $(date)"
+
+# Update packages and install Node.js and npm
+apt-get update
+apt-get install -y nodejs npm
+
+echo "Node.js version: $(node --version)"
+echo "NPM version: $(npm --version)"
+
+# Install pm2, a production process manager for Node.js
+npm install pm2 -g
+
+echo "PM2 version: $(pm2 --version)"
+
+# Create a directory for the app
+mkdir -p /opt/app
+cd /opt/app
+
+# Create the package.json file
+cat <<'EOF' > package.json
+{
+  "name": "mock-inventory-service",
+  "version": "1.0.0",
+  "main": "app.js",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+EOF
+
+# Create the app.js file with the inventory service logic
+cat <<'EOFAPP' > app.js
+const express = require('express');
+const app = express();
+const port = 8080;
+
+// Middleware to parse JSON bodies
+app.use(express.json());
+
+// In-memory data store with some initial items
+let items = [
+  { name: 'Laptop', code: 'TECH-001', count: 50 },
+  { name: 'Desk Chair', code: 'FURN-001', count: 25 },
+  { name: 'Monitor', code: 'TECH-002', count: 100 }
+];
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  console.log('GET /health - Health check');
+  res.status(200).json({ status: 'healthy', service: 'inventory-service' });
+});
+
+// GET endpoint to list all items
+app.get('/inventory', (req, res) => {
+  console.log('GET /inventory - Returning items list');
+  res.status(200).json(items);
+});
+
+// POST endpoint to add a new item
+app.post('/inventory', (req, res) => {
+  const { name, code } = req.body;
+
+  if (!name || !code) {
+    console.log('POST /inventory - Failed: Missing name or code');
+    return res.status(400).json({ error: 'Name and code are required.' });
+  }
+
+  const index = items.findIndex(el => el.code === code);
+  let updatedItem;
+
+  if (index > -1) {
+    items[index].count++;
+    updatedItem = items[index];
+    console.log('POST /inventory - Updated existing item: ' + name + ' ' + code + '. Count: ' + items[index].count);
+  } else {
+    updatedItem = { name, code, count: 1 };
+    items.push(updatedItem);
+    console.log('POST /inventory - Added new item: ' + name + ' ' + code + '. Total items: ' + items.length);
+  }
+
+  // Cleanup: Keep only the 50 most recent items
+  if (items.length > 50) {
+    const removedCount = items.length - 50;
+    items = items.slice(-50);
+    console.log('POST /inventory - Cleaned up ' + removedCount + ' old item(s), keeping 50 most recent');
+  }
+
+  res.status(201).json(updatedItem);
+});
+
+app.listen(port, '0.0.0.0', () => {
+  console.log('Inventory service listening on port ' + port);
+  console.log('Initial inventory: ' + items.length + ' items');
+});
+EOFAPP
+
+echo "Created app.js and package.json"
+
+# Install application dependencies
+npm install
+
+echo "NPM dependencies installed"
+
+# Start the application using pm2
+pm2 start app.js --name "inventory-app"
+
+# Save the PM2 process list
+pm2 save
+
+# Configure PM2 to start on boot
+env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp /root
+
+echo "Inventory service started successfully at $(date)"
+echo "PM2 status:"
+pm2 list

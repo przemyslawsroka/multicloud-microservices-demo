@@ -199,12 +199,6 @@ output "crm_subnet_cidr" {
   description = "The CIDR range of the CRM subnet."
 }
 
-# ============================================================================
-# OLD EMBEDDED SCRIPT REMOVED - NOW USING EXTERNAL FILE
-# The original embedded startup script (lines 80-161) has been moved to:
-# crm-backend/startup.sh
-# ============================================================================
-
 # 5. Create VPC peering from crm-vpc to online-boutique-vpc VPC
 resource "google_compute_network_peering" "crm_to_ob" {
   name         = "crm-to-ob-peering"
@@ -275,12 +269,6 @@ resource "google_compute_instance" "crm_frontend_vm" {
   # Startup script from external file
   metadata_startup_script = file("${path.module}/crm-frontend/startup.sh")
 }
-
-# ============================================================================
-# OLD EMBEDDED SCRIPT REMOVED - NOW USING EXTERNAL FILE
-# The original embedded startup script (lines 252-445) has been moved to:
-# crm-frontend/startup.sh
-# ============================================================================
 
 # 10. Create instance group for the frontend VM
 resource "google_compute_instance_group" "crm_frontend_group" {

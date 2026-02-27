@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/profiler"
+	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -98,6 +99,11 @@ type checkoutService struct {
 	gcpFurnitureURL     string
 	gcpWarehouseURL     string
 	gcpAccountingURL    string
+
+	// Pub/Sub configuration
+	gcpProjectID  string
+	pubsubTopic   string
+	pubsubClient  *pubsub.Client
 }
 
 func main() {
@@ -149,9 +155,21 @@ func main() {
 	svc.gcpFurnitureURL = os.Getenv("GCP_FURNITURE_URL")
 	svc.gcpWarehouseURL = os.Getenv("GCP_WAREHOUSE_URL")
 	svc.gcpAccountingURL = os.Getenv("GCP_ACCOUNTING_URL")
+	svc.gcpProjectID = os.Getenv("GCP_PROJECT_ID")
+	svc.pubsubTopic = os.Getenv("PUBSUB_TOPIC")
 	
 	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q gcpWarehouse=%q gcpAccounting=%q",
 		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL, svc.gcpWarehouseURL, svc.gcpAccountingURL)
+
+	if svc.gcpProjectID != "" {
+		client, err := pubsub.NewClient(ctx, svc.gcpProjectID)
+		if err != nil {
+			log.Warnf("Failed to create pubsub client: %v", err)
+		} else {
+			svc.pubsubClient = client
+			log.Infof("Pub/Sub client initialized for project: %s", svc.gcpProjectID)
+		}
+	}
 
 	log.Infof("service config: %+v", svc)
 
@@ -343,6 +361,37 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		log.Warnf("failed to send order confirmation to %q: %+v", req.Email, err)
 	} else {
 		log.Infof("order confirmation email sent to %q", req.Email)
+	}
+
+	// Publish OrderConfirmedEvent to Pub/Sub
+	if cs.pubsubClient != nil && cs.pubsubTopic != "" {
+		totalFloat := float32(total.Units) + float32(total.Nanos)/1e9
+		
+		event := map[string]interface{}{
+			"orderId":       orderID.String(),
+			"customerEmail": req.Email,
+			"totalAmount":   totalFloat,
+			"currency":      req.UserCurrency,
+			"timestamp":     time.Now().UTC().Format(time.RFC3339),
+			"items":         prep.orderItems, // Include full item array to match struct definition if needed
+		}
+		data, err := json.Marshal(event)
+		if err != nil {
+			log.Warnf("Failed to marshal pubsub event: %v", err)
+		} else {
+			topic := cs.pubsubClient.Topic(cs.pubsubTopic)
+			res := topic.Publish(ctx, &pubsub.Message{
+				Data: data,
+			})
+			_, err := res.Get(ctx)
+			if err != nil {
+				log.Warnf("Failed to publish OrderConfirmedEvent: %v", err)
+			} else {
+				log.Infof("Published OrderConfirmedEvent to topic %s", cs.pubsubTopic)
+			}
+		}
+	} else {
+		log.Debug("Pub/Sub client or topic not configured, skipping event publishing")
 	}
 
 	success = true

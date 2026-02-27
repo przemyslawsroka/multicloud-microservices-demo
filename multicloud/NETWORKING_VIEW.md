@@ -22,10 +22,10 @@ The primary goal of this demonstration project is to showcase maximum diversity 
 *   **Design Profile**: Traffic to the legacy CRM mono-repo passes through an unmanaged instance group concealed behind a regional Internal Load Balancer serving on `10.3.0.xxx:8080`.
 *   **Rationale**: Distributes stateless logic across legacy VM instances transparently to modern microservices, acting as a highly available internal facade. 
 
-### 2.3 Direct VPC Peering
+### 2.3 HA Cloud VPN
 **Component & Target:** `checkoutservice` (GKE) $\rightarrow$ Furniture Service (GCP VM)
-*   **Design Profile**: A traditional bidirectional VPC Peer linking the boutique GKE clusters network with the furniture's dedicated backend VPC.
-*   **Rationale**: Highest throughput lowest-latency model, though offering less security segmentation than PSC. Used for high-volume legacy systems.
+*   **Design Profile**: A highly available IPsec VPN tunnel connecting the boutique GKE clusters network with the furniture's dedicated backend VPC.
+*   **Rationale**: Allows secure, encrypted connectivity between isolated VPCs using BGP routing over public IP infrastructure. This showcases how hybrid legacy systems that cannot use VPC Peering or PSC might still connect natively with high SLAs.
 
 ---
 
@@ -56,7 +56,7 @@ Modern serverless compute naturally boots outside of user-defined VPCs. We demon
 *   **Design Profile**: Prevents Data Exfiltration by placing a hardened security perimeter around the BigQuery APIs.
 *   **Rationale**: Even if a developer accidentally exposes credentials, queries against the Data Warehouse will bounce heavily at the perimeter layer unless originating directly from within an approved interior VPC namespace.
 
-### 4.3 HA Cloud VPN / Carrier Interconnect
-**Component & Target:** ERP Systems (GCP) $\rightarrow$ Fraud Detection Engine (Azure VM)
-*   **Design Profile**: Cross-cloud telemetry streaming routes through a fully managed High-Availability IPsec VPN Tunnel (or Partner Interconnect). 
-*   **Rationale**: Cross-cloud multi-vendor traffic requires BGP encrypted tunneling so that `10.x.x.x` (GCP) can natively ping `10.y.y.y` (Azure Virtual Network subnets) over the public wire securely without public exposure.
+### 4.3 Dedicated / Carrier Interconnect
+**Component & Target:** ERP Systems (GCP GCP) $\rightarrow$ Fraud Detection Engine (Azure VM)
+*   **Design Profile**: Cross-cloud telemetry streaming routes through a fully managed Dedicated Interconnect or Carrier Interconnect, providing physical link aggregation directly into Azure.
+*   **Rationale**: Enterprise cross-cloud multi-vendor traffic requires BGP secured tunneling over dedicated physical bandwidth so that `10.x.x.x` (GCP) can natively ping `10.y.y.y` (Azure Virtual Network subnets) securely, bypassing internet routing and unpredictable latency entirely.

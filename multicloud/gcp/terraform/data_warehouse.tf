@@ -26,46 +26,97 @@ resource "google_bigquery_table" "order_events" {
   schema = <<EOF
 [
   {
-    "name": "orderId",
+    "name": "order_id",
     "type": "STRING",
     "mode": "REQUIRED",
     "description": "Unique identifier for the order"
   },
   {
-    "name": "customerEmail",
+    "name": "user_id",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "User ID of the customer"
+  },
+  {
+    "name": "email",
     "type": "STRING",
     "mode": "NULLABLE",
     "description": "Email of the customer"
   },
   {
-    "name": "totalAmount",
-    "type": "FLOAT",
-    "mode": "REQUIRED",
-    "description": "Total monetary amount of the order"
-  },
-  {
-    "name": "currency",
+    "name": "user_currency",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "Currency code"
+    "description": "Original checkout currency"
   },
   {
-    "name": "timestamp",
-    "type": "TIMESTAMP",
-    "mode": "REQUIRED",
-    "description": "Time the event was published"
-  },
-  {
-    "name": "publish_time",
-    "type": "TIMESTAMP",
-    "mode": "NULLABLE",
-    "description": "Pub/Sub publish timestamp"
-  },
-  {
-    "name": "message_id",
+    "name": "shipping_tracking_id",
     "type": "STRING",
     "mode": "NULLABLE",
-    "description": "Pub/Sub message ID"
+    "description": "Logistics tracking ID"
+  },
+  {
+    "name": "shipping_cost",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "description": "Monetary cost of shipping",
+    "fields": [
+      {
+        "name": "currency_code",
+        "type": "STRING",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "units",
+        "type": "INT64",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "nanos",
+        "type": "INT64",
+        "mode": "REQUIRED"
+      }
+    ]
+  },
+  {
+    "name": "shipping_address",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "description": "Destination address",
+    "fields": [
+      { "name": "street_address", "type": "STRING", "mode": "NULLABLE" },
+      { "name": "city", "type": "STRING", "mode": "NULLABLE" },
+      { "name": "state", "type": "STRING", "mode": "NULLABLE" },
+      { "name": "country", "type": "STRING", "mode": "NULLABLE" },
+      { "name": "zip_code", "type": "INT64", "mode": "NULLABLE" }
+    ]
+  },
+  {
+    "name": "items",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "description": "Line items in the order",
+    "fields": [
+      {
+        "name": "item",
+        "type": "RECORD",
+        "mode": "NULLABLE",
+        "fields": [
+          { "name": "product_id", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "quantity", "type": "INT64", "mode": "REQUIRED" }
+        ]
+      },
+      {
+        "name": "cost",
+        "type": "RECORD",
+        "mode": "NULLABLE",
+        "fields": [
+          { "name": "currency_code", "type": "STRING", "mode": "REQUIRED" },
+          { "name": "units", "type": "INT64", "mode": "REQUIRED" },
+          { "name": "nanos", "type": "INT64", "mode": "REQUIRED" }
+        ]
+      }
+    ]
   }
 ]
 EOF

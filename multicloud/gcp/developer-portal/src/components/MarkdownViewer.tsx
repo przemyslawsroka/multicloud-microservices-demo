@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import mermaid from 'mermaid';
 import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 const Mermaid = ({ chart }: { chart: string }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -39,6 +40,7 @@ export default function MarkdownViewer({ content }: { content: string }) {
   // Extract custom headings to properly render ids for anchoring
   return (
     <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeRaw]}
       components={{
         a: ({ ...props }) => {

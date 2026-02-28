@@ -1,0 +1,9 @@
+{
+  "name": "internal-api-monitor",
+  "version": "1.0.0",
+  "description": "Synthetic monitor for internal API health checks",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/synthetics": "^1.2.0"
+  }
+}

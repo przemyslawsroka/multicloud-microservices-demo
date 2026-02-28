@@ -70,3 +70,30 @@ E2E testing replicates the actual user lifecycle, crossing the multi-region and 
     *   Simulate a customer navigating the frontend GKE service and completing a real checkout sequence.
     *   Validate the synchronous boundary logic: The system correctly triggers the Microsoft Azure Fraud Analytics API before confirming the UI.
     *   Validate the asynchronous boundary logic: Interrogate the downstream Node.js application logs dynamically using Cloud Logging API scripts to confirm the OrderManagement Cloud Run container successfully triggered and mapped the payloads correctly across VPC bounds.
+
+---
+
+## 6. Continuous Reliability (GCP Synthetic Monitors)
+
+Once the infrastructure is successfully deployed to production, passive health checks are insufficient for a distributed architecture spanning multiple VPCs and external clouds. 
+
+We will implement **[GCP Synthetic Monitors](https://cloud.google.com/monitoring/uptime-checks/synthetic-monitors)** (the evolution of legacy Uptime Checks) to continually assert the baseline operational health of the core routing components *from within the VPC boundaries*.
+
+### Proposed Synthetic Monitor Suite:
+
+1. **Internal API Monitor (Private Uptime Check)**
+   * **Target**: Private REST APIs (Warehouse, Accounting, CRM ILB, Inventory ILB).
+   * **Execution**: A Node.js Gen2 Cloud Function deployed directly onto the `inventory-vpc` and `core-vpc` utilizing Serverless VPC Egress.
+   * **Action**: Executes a Mocha test suite every 5 minutes that fires `GET /health` requests to `http://crm.internal.boutique.local:8080/health` and `https://warehouse-api-service...run.app/health`.
+   * **Value**: Instantly detects if internal routing rules, firewall appliances, or DNS arrays fail silently inside the perimeter.
+
+2. **Frontend User Journey (Puppeteer Custom Uptime Check)**
+   * **Target**: The Public GKE Load Balancer IP for the Online Boutique.
+   * **Execution**: A Headless Chromium instance running in a Cloud Function executing on a global schedule (e.g., from `us-central1` and `europe-west1`).
+   * **Action**: Automatically loads the homepage, adds a localized product to the cart, and clicks the checkout boundary.
+   * **Value**: Affirms that the overarching microservices map natively aligns and handles public ingress structurally and functionally.
+
+3. **External Cloud Boundary Audit (Azure Egress Check)**
+   * **Target**: The external Microsoft Azure Fraud Analytics API.
+   * **Execution**: A lightweight ping function.
+   * **Value**: Monitors external latency limits and DNS resolutions crossing the public internet toward Azure components, independently from the Checkout Service.

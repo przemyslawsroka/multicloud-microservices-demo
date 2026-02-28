@@ -4,10 +4,10 @@ metadata:
   name: checkoutservice-config
   namespace: default
 data:
-  AZURE_ANALYTICS_URL: "http://10.2.1.5:8080"      # Private IP via interconnect
-  GCP_CRM_URL: "http://10.3.0.2:8080"              # CRM backend VM
-  GCP_INVENTORY_URL: "http://10.132.0.3:8080"      # Inventory service
-  GCP_FURNITURE_URL: "http://10.5.0.2:8080"        # Furniture service
+  AZURE_ANALYTICS_URL: "http://analytics.azure.internal.boutique.local:8080"      # Private DNS
+  GCP_CRM_URL: "http://crm.internal.boutique.local:8080"              # CRM backend VM via DNS
+  GCP_INVENTORY_URL: "http://inventory.internal.boutique.local:8080"      # Inventory service via DNS
+  GCP_FURNITURE_URL: "http://furniture.internal.boutique.local:8080"        # Furniture service via DNS
   GCP_WAREHOUSE_URL: "https://warehouse-api-service-985429063844.europe-west1.run.app"  # Cloud Run
   GCP_ACCOUNTING_URL: "https://accounting-api-service-985429063844.us-central1.run.app" # Cloud Run
   PUBSUB_TOPIC: "order-events"                     # Pub/Sub topic for OrderConfirmedEvent

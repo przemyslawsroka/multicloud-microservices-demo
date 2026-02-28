@@ -1,43 +1,51 @@
 # 🌩️ Multi-Cloud E-Commerce Demo
-## Developer Reference Portal
 
-Welcome! The primary goal of this portal is to educate developers on how to construct a complex, real-world microservice system leveraging enterprise Google Cloud Platform networking products.
+Welcome to the Multi-Cloud E-Commerce Demo developer documentation. This project provides a reference architecture for a distributed microservices system across multiple environments, demonstrating the practical application of Google Cloud networking, compute, and security products alongside multi-cloud integration.
 
-This documentation demonstrates advanced topologies replacing simple VPC Peering with strictly controlled constructs like **Private Service Connect (PSC)**, **Direct VPC Egress**, and encrypted **Interconnect/BGP Routing**.
-
-Whether you are exploring the overarching Business architecture, investigating how we route Cloud Run workloads natively using Serverless VPC connectors, or seeing how we simulate on-prem infrastructure using BGP Interconnects—everything is documented here.
+It serves as an educational resource to illustrate how disparate systems—running on Google Kubernetes Engine (GKE), Google Cloud Run, Google Compute Engine (GCE), and Microsoft Azure Virtual Machines—communicate securely and reliably using modern enterprise networking topologies.
 
 ---
 
-## 📚 Core Documentation
+## 🎯 Educational Focus
 
-Dive into the four fundamental views defining this architecture:
+This documentation is designed for Software Engineers (SWEs), Network Engineers, and Product Managers (PMs) to understand and evaluate advanced system design and network perimeters in practice. 
 
-### 1. Business View
-Understand the high-level logical capabilities, enterprise resource planning structures, risk engines, and real-time operations orchestrating checkout fulfillment across the multi-cloud architecture. Features beautiful Mermaid architectural diagrams.
+By exploring this architecture, you will learn how to:
 
-[Explore Business View](BUSINESS_VIEW.md){ .md-button .md-button--primary }
-
-### 2. Networking View
-Deeply discover how Private Service Connect, Serverless VPC Access, NAT-less Private Google Access, and advanced Cloud Load Balancing route traffic safely without exposing massive blast-radius attack vectors. This is the **primary educational module** for mastering modern networking concepts.
-
-[Examine Networking Topologies](NETWORKING_VIEW.md){ .md-button }
-
-### 3. Technical Profiles
-Explore our robust technical catalog delineating each discrete microservice stack (Go, Python, TypeScript, Express). See exact API integration patterns (e.g., `POST /transactions` or `GET /customers`), state management bounds, and database profiles.
-
-[View Technical Profiles](TECHNICAL_VIEW.md){ .md-button }
-
-### 4. Deployment Topologies
-Examine how Terraform orchestrates resources, the regional vs global distributions of Google Kubernetes Engine (GKE) clusters versus Cloud Run managed serverless environments.
-
-[See Deployment Specs](DEPLOYMENT_VIEW.md){ .md-button }
+- **Apply Zero-Trust Networking**: Understand the specific use cases for Private Service Connect (PSC) and Internal Load Balancing (ILB) to enforce strict service boundaries, moving beyond traditional flat Virtual Private Cloud (VPC) peering.
+- **Connect Serverless Workloads Securely**: Compare Direct VPC Egress with Serverless VPC Access Connectors when routing Cloud Run applications into private corporate networks.
+- **Implement Multi-Cloud Integrations**: Route secure communication across cloud boundaries (GCP to Azure) utilizing Dedicated Interconnects or HA VPNs coupled with BGP dynamic routing.
+- **Govern B2B External Access**: Use Apigee API Management to protect internal workloads from third-party partners operating over the public internet.
+- **Enable Event-Driven Operations**: Utilize Google Cloud Pub/Sub and BigQuery for asynchronous process decoupling and data analytics respectively.
 
 ---
 
-!!! tip "Getting Started"
-    If you're a developer newly onboarding to this architecture, we strongly recommend starting with the **Business View** to map domain boundaries, before deep-diving into the sprawling **Networking View**.
+## 📚 Documentation Navigation
+
+To systematically understand the system, we recommend exploring the modules in the following order:
+
+### 1. [Business Domains](business.md)
+Understand what the application components do. This section outlines the functional areas of the e-commerce platform, such as order fulfillment, fraud analysis, and inventory management, without delving into the underlying code.
+
+[Explore Business Domains](business.md){ .md-button .md-button--primary }
+
+### 2. [Technical Architecture](technical.md)
+A breakdown of the APIs, data flows, and inter-service communication patterns. This covers the transition from synchronous validation to asynchronous event-driven state processing.
+
+[Explore Technical Architecture](technical.md){ .md-button }
+
+### 3. [Cloud Networking](networking.md)
+The core educational module. A detailed analysis of how traffic physically routes between isolated VPCs, including configurations for PSC, Cloud DNS, ILB, Direct VPC Egress, and Private Google Access.
+
+[Master Cloud Networking](networking.md){ .md-button }
+
+### 4. [Infrastructure & DevOps](infrastructure.md)
+A review of the multi-region deployment map across Google Cloud and Azure, the Terraform infrastructure-as-code structure, and perimeter controls like VPC Service Controls (VPC SC).
+
+[See Infrastructure Specs](infrastructure.md){ .md-button }
+
+---
 
 <br/>
 
-*Built with ♥️ using [`Material for MkDocs`](https://squidfunk.github.io/mkdocs-material/)*
+*Built with ♥️ using [`Material for MkDocs`](https://squidfunk.github.io/mkdocs-material/).*

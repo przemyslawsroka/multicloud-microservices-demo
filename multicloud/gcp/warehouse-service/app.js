@@ -155,7 +155,31 @@ app.delete('/warehouse/:id', (req, res) => {
   res.status(200).json({ message: 'Item deleted', item: deletedItem });
 });
 
+// POST endpoint for ordermanagement shipments
+app.post('/shipments', (req, res) => {
+  const { orderId, trackingId, items, destinationAddress } = req.body;
+
+  if (!orderId || !items || !destinationAddress) {
+    console.log('POST /shipments - Failed: Missing logistics payload fields');
+    return res.status(400).json({ error: 'Order ID, items array, and destination Address are required' });
+  }
+
+  console.log(`POST /shipments - Creating shipment for Order ${orderId}`);
+  console.log(`Tracking ID: ${trackingId || 'N/A'}`);
+  console.log(`Items count: ${items.length}`);
+
+  // In a real application, we would insert into the local database and optionally trigger picking operations
+
+  res.status(201).json({
+    message: 'Shipment scheduled successfully',
+    shipmentDetails: {
+      orderId,
+      trackingId,
+      status: 'pending_fulfillment'
+    }
+  });
+});
+
 app.listen(port, '0.0.0.0', () => {
   console.log(`Warehouse service listening on port ${port}`);
 });
-

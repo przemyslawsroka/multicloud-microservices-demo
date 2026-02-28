@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import ReactMarkdown from 'react-markdown';
+import MarkdownViewer from '@/components/MarkdownViewer';
 import Link from 'next/link';
 
 export async function generateStaticParams() {
@@ -12,7 +12,7 @@ export async function generateStaticParams() {
       .map(file => ({
         slug: file.replace('.md', ''),
       }));
-  } catch (err) {
+  } catch {
     return [];
   }
 }
@@ -25,7 +25,7 @@ export default async function DocumentPage({ params }: { params: { slug: string 
   let content = 'Document not found.';
   try {
     content = fs.readFileSync(filePath, 'utf8');
-  } catch (err) {
+  } catch {
     // leave as not found
   }
 
@@ -48,25 +48,13 @@ export default async function DocumentPage({ params }: { params: { slug: string 
       <main className="max-w-4xl mx-auto py-12 px-6 lg:px-8">
         <article className="prose prose-blue prose-lg md:prose-xl max-w-none 
                             prose-headings:font-bold prose-headings:text-gray-900 
-                            prose-h1:text-5xl prose-h1:mb-8 prose-h2:mt-12 prose-h2:border-b-2 prose-h2:border-gray-100 prose-h2:pb-4
+                            prose-h1:text-4xl md:prose-h1:text-5xl prose-h1:mb-8 prose-h2:mt-12 prose-h2:border-b-2 prose-h2:border-gray-100 prose-h2:pb-4
                             prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
                             prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-pink-600
                             prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:shadow-lg
                             prose-img:rounded-xl prose-img:shadow-md
                             prose-strong:text-gray-900 prose-strong:font-bold">
-          <ReactMarkdown
-            components={{
-              a: ({node, ...props}) => {
-                // If it's a GCP doc link, open in new tab
-                const isExternal = props.href?.startsWith('http');
-                return (
-                  <a target={isExternal ? "_blank" : "_self"} rel={isExternal ? "noopener noreferrer" : ""} {...props} />
-                )
-              }
-            }}
-          >
-            {content}
-          </ReactMarkdown>
+          <MarkdownViewer content={content} />
         </article>
       </main>
     </div>

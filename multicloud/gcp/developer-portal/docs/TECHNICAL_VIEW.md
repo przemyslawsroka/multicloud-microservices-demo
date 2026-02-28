@@ -7,49 +7,49 @@ This document specifies the technical design, API communication patterns, and sy
 The core challenge of this architecture is bridging modern serverless technologies (Cloud Run), Kubernetes orchestrations (GKE), and bare-metal scaled Virtual Machines across different cloud providers.
 
 ### Phase 1: Ingress & Validation (Synchronous REST APIs)
-1.  **Checkout (`checkoutservice` as GKE LoadBalancer)** $\rightarrow$ **CRM Service (VM)**: 
+1.  **Checkout (`checkoutservice` as GKE LoadBalancer)** → **CRM Service (VM)**: 
     - The Checkout Service queries the CRM backend via a standard HTTP GET explicitly pointing to an internal load balancer IP.
     - *API Pattern*: REST `GET /health` and `GET /customers`.
-3.  **Checkout $\rightarrow$ Fraud Detection Engine (Azure VM)**: 
+3.  **Checkout → Fraud Detection Engine (Azure VM)**: 
     - The system runs a synchronous transaction risk check.
     - *API Pattern*: REST `POST /metrics` passing `{ transactionType, durationMs, success }` which returns a `{ riskScore }`.
-4.  **Checkout $\rightarrow$ Inventory & Furniture (VMs)**: 
+4.  **Checkout → Inventory & Furniture (VMs)**: 
     - The Checkout Service verifies stock levels before holding items in the cart.
     - *API Pattern*: REST `GET /inventory/{productId}` returning stock JSON.
 
 ### Phase 2: Asynchronous Event Broadcasting (Pub/Sub)
-5.  **Checkout $\rightarrow$ Event Broker (Google Cloud Pub/Sub)**: 
+5.  **Checkout → Event Broker (Google Cloud Pub/Sub)**: 
     - Once the synchronous validation clears, the Checkout Service commits the cart and publishes a deeply decoupled domain event: `OrderConfirmedEvent`.
     - *API Pattern*: gRPC/HTTP publishing to Pub/Sub topic spanning the entire application graph.
 
 ### Phase 3: Order Lifecycle & Processing (Serverless Scale-out)
-6.  **Event Broker $\rightarrow$ Order Management System (OrderManagement - Cloud Run)**: 
+6.  **Event Broker → Order Management System (OrderManagement - Cloud Run)**: 
     - OrderManagement is triggered automatically via a Pub/Sub Push Subscription (Eventarc). It ingests the `OrderConfirmedEvent` payload.
-7.  **OrderManagement $\rightarrow$ Accounting (Cloud Run)**: 
+7.  **OrderManagement → Accounting (Cloud Run)**: 
     - OrderManagement forwards financial payloads via synchronous POST to Accounting.
     - *API Pattern*: REST `POST /transactions`.
     - *Side-Effect Link*: The Accounting service simultaneously fetches billing data backward from the original **CRM Service (VM)** via synchronous GET.
-8.  **OrderManagement $\rightarrow$ Warehouse (Cloud Run)**: 
+8.  **OrderManagement → Warehouse (Cloud Run)**: 
     - OrderManagement fires a fulfillment POST Request to the Warehouse APIs.
     - *Side-Effect Link*: The Warehouse service updates stock ledgers backward on the **Inventory Service (VM)** via `PUT /inventory/{productId}`.
 
 ### Phase 4: B2B Integration (Public APIs)
-9.  **External B2B Partners $\rightarrow$ Apigee Gateway**: 
+9.  **External B2B Partners → Apigee Gateway**: 
     - Third-party logistics (3PL) carriers and resellers hit the company's public-facing developer API portal. Apigee evaluates developer API keys, monetization quotas, and security policies before proxying traffic inward.
-10. **Apigee Gateway $\rightarrow$ Partner API Service (Cloud Run)**: 
+10. **Apigee Gateway → Partner API Service (Cloud Run)**: 
     - Apigee proxies the authenticated traffic securely to the fully isolated Serverless application running natively in Node.js/TypeScript.
     - *API Pattern*: REST `POST /logistics/tracking` and `GET /catalog/products`.
 
 ### Phase 5: Big Data Intelligence
-11. **Event Broker $\rightarrow$ Data Warehouse (BigQuery)**: 
+11. **Event Broker → Data Warehouse (BigQuery)**: 
     - A direct BigQuery Pub/Sub Subscription ingests all event logs purely asynchronously, requiring zero compute overhead from the GKE cluster.
 
 ### Phase 6: Agentic AI Integration (MCP & ADK)
-12. **Frontend UI $\rightarrow$ AI Concierge (Agent Engine)**:
+12. **Frontend UI → AI Concierge (Agent Engine)**:
     - The custom Concierge Chat Widget interacts with the `frontend_concierge` agent securely over REST HTTP mimicking the Agent Engine framework wrapper.
-13. **AI Concierge $\rightarrow$ Back-Office CRM Agent (Agent-to-Agent)**:
+13. **AI Concierge → Back-Office CRM Agent (Agent-to-Agent)**:
     - The concierge utilizes A2A delegation to securely proxy logic off to the `crm_investigator` for private data lookups, isolating user prompts securely.
-14. **Back-Office CRM Agent $\rightarrow$ CRM Service (MCP)**:
+14. **Back-Office CRM Agent → CRM Service (MCP)**:
     - The investigator utilizes the Model Context Protocol (MCP) securely over SSE to execute deterministic database tooling (`lookup_customer`, `find_order`) directly against the CRM Node backend.
 
 ---

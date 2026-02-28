@@ -1,0 +1,72 @@
+site_name: Multi-Cloud E-Commerce Demo
+site_description: Enterprise Multi-Cloud E-Commerce Architecture Documentation
+site_author: Architecture Team
+
+theme:
+  name: material
+  logo: material/cloud-outline
+  favicon: material/cloud
+  features:
+    - navigation.indexes
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - header.autohide
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+nav:
+  - Welcome: index.md
+  - Architecture Framework:
+    - Business View: BUSINESS_VIEW.md
+    - Connecting It All (Networking): NETWORKING_VIEW.md
+    - Tech Specs (Technical): TECHNICAL_VIEW.md
+    - Topologies (Deployment): DEPLOYMENT_VIEW.md

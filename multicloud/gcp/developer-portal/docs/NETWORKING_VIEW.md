@@ -91,7 +91,7 @@ Private Service Connect lets consumers access managed services privately from in
 👉 [Read the official documentation](https://cloud.google.com/vpc/docs/private-service-connect)
 
 **How we use it:**  
-- **Component & Target:** `checkoutservice` (GKE) $\rightarrow$ Inventory Service (GCP VM)
+- **Component & Target:** `checkoutservice` (GKE) → Inventory Service (GCP VM)
 - **Rationale**: The `inventory-vpc` is strictly isolated without public ingress. The consumer (`online-boutique-vpc`) accesses the inventory API using a single reserved IP address configured as a PSC endpoint. This creates maximum security via Producer/Consumer separation. Unlike VPC Peering, which exposes entire subnets unconditionally, PSC explicitly exposes a single target API.
 
 ### 2.5 Serverless VPC Access & Direct VPC Egress

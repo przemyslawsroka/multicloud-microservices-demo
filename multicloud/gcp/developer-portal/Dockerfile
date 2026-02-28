@@ -1,29 +1,30 @@
-FROM node:20-alpine AS builder
+FROM python:3.11-alpine AS builder
 
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+WORKDIR /docs
 
-COPY . .
-# We need to build the next app
-RUN npm run build
+# Install dependencies
+RUN pip install mkdocs-material mkdocs-mermaid2-plugin
 
-# Production stage
-FROM node:20-alpine AS runner
-WORKDIR /app
+# Copy configuration and content
+COPY mkdocs.yml .
+COPY docs/ docs/
 
-ENV NODE_ENV production
-ENV PORT 8080
+# Build static site
+RUN mkdocs build
 
-# Next.js standalone mode config creates a standalone folder with all dependencies
-# But by default it's not enabled, we must enable it in next.config.ts
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-# Note: Nextjs 15+ standalone outputs the server.js to the root of standalone folder
-# We also need to copy the content folder so `fs.readFileSync` works
-COPY --from=builder /app/src/content ./src/content
+# Use Nginx to serve the site
+FROM nginx:alpine
+
+# Copy built site
+COPY --from=builder /docs/site /usr/share/nginx/html
+
+# Update Nginx config to run on port 8080 (Cloud Run default) and support non-root execution
+RUN sed -i 's/listen  *80;/listen 8080;/g' /etc/nginx/conf.d/default.conf && \
+    sed -i 's/listen  *\[::\]:80;/listen [::]:8080;/g' /etc/nginx/conf.d/default.conf && \
+    chmod -R 777 /var/cache/nginx && \
+    chmod -R 777 /var/run && \
+    chmod -R 777 /etc/nginx/conf.d
 
 EXPOSE 8080
-CMD ["node", "server.js"]
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -91,19 +91,38 @@ app.get('/transactions/:id', (req, res) => {
 
 // POST endpoint to add a new transaction
 app.post('/transactions', (req, res) => {
-  const { item, price, date, customer } = req.body;
+  const { orderId, financials, currency, customerEmail, userId } = req.body;
 
-  if (!item || typeof price !== 'number' || !date) {
+  if (!orderId || !financials) {
     console.log('POST /transactions - Failed: Missing required fields');
-    return res.status(400).json({ error: 'Item, price, and date are required' });
+    return res.status(400).json({ error: 'Order ID and financials are required' });
+  }
+
+  // Calculate items cost
+  let totalCost = 0;
+  if (financials.items && Array.isArray(financials.items)) {
+    totalCost += financials.items.reduce((sum, itemObj) => {
+      let cost = 0;
+      if (itemObj.cost) {
+        cost = Number(itemObj.cost.units || 0) + Number(itemObj.cost.nanos || 0) / 1000000000;
+      }
+      return sum + cost;
+    }, 0);
+  }
+
+  // Calculate shipping cost
+  if (financials.shipping_cost) {
+    totalCost += Number(financials.shipping_cost.units || 0) + Number(financials.shipping_cost.nanos || 0) / 1000000000;
   }
 
   const newTransaction = {
     id: nextId++,
-    item,
-    price: parseFloat(price),
-    date,
-    customer: customer || 'Unknown'
+    orderId,
+    item: `Order ${orderId}`,
+    price: parseFloat(totalCost.toFixed(2)),
+    currency,
+    date: new Date().toISOString(),
+    customer: customerEmail || userId || 'Unknown'
   };
   
   transactions.push(newTransaction);
@@ -115,7 +134,7 @@ app.post('/transactions', (req, res) => {
     console.log(`POST /transactions - Cleaned up ${removedCount} old transaction(s), keeping 50 most recent`);
   }
   
-  console.log(`POST /transactions - Added new transaction: ${item} ($${price}). Total: ${transactions.length}`);
+  console.log(`POST /transactions - Added new transaction for Order ${orderId} ($${newTransaction.price}). Total: ${transactions.length}`);
   res.status(201).json(newTransaction);
 });
 

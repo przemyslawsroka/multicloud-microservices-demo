@@ -53,11 +53,11 @@ resource "google_cloud_run_v2_service" "ordermanagement_api_service" {
 
       env {
         name  = "ACCOUNTING_SERVICE_URL"
-        value = "" # To be provided or fetched
+        value = google_cloud_run_v2_service.accounting_api_service.uri 
       }
       env {
         name  = "WAREHOUSE_SERVICE_URL"
-        value = "" # To be provided or fetched
+        value = google_cloud_run_v2_service.warehouse_api_service.uri 
       }
 
       resources {

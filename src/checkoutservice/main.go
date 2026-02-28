@@ -97,9 +97,6 @@ type checkoutService struct {
 	gcpCrmURL           string
 	gcpInventoryURL     string
 	gcpFurnitureURL     string
-	gcpWarehouseURL     string
-	gcpAccountingURL    string
-
 	// Pub/Sub configuration
 	gcpProjectID  string
 	pubsubTopic   string
@@ -153,13 +150,11 @@ func main() {
 	svc.gcpCrmURL = os.Getenv("GCP_CRM_URL")
 	svc.gcpInventoryURL = os.Getenv("GCP_INVENTORY_URL")
 	svc.gcpFurnitureURL = os.Getenv("GCP_FURNITURE_URL")
-	svc.gcpWarehouseURL = os.Getenv("GCP_WAREHOUSE_URL")
-	svc.gcpAccountingURL = os.Getenv("GCP_ACCOUNTING_URL")
 	svc.gcpProjectID = os.Getenv("GCP_PROJECT_ID")
 	svc.pubsubTopic = os.Getenv("PUBSUB_TOPIC")
 	
-	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q gcpWarehouse=%q gcpAccounting=%q",
-		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL, svc.gcpWarehouseURL, svc.gcpAccountingURL)
+	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q",
+		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL)
 
 	if svc.gcpProjectID != "" {
 		client, err := pubsub.NewClient(ctx, svc.gcpProjectID)
@@ -306,18 +301,6 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	// Check furniture service
 	if err := cs.checkFurniture(ctx); err != nil {
 		log.Warnf("Furniture check failed: %v", err)
-		// Don't fail the order, just log
-	}
-
-	// Check warehouse service
-	if err := cs.checkWarehouse(ctx); err != nil {
-		log.Warnf("Warehouse service check failed: %v", err)
-		// Don't fail the order, just log
-	}
-
-	// Check accounting service
-	if err := cs.checkAccounting(ctx, prep.cartItems); err != nil {
-		log.Warnf("Accounting service check failed: %v", err)
 		// Don't fail the order, just log
 	}
 
@@ -633,78 +616,7 @@ func (cs *checkoutService) checkFurniture(ctx context.Context) error {
 	return cs.postJSON(ctx, cs.gcpFurnitureURL+"/furniture", furnitureData)
 }
 
-// checkWarehouse calls GCP Warehouse Service on Cloud Run (which internally calls Inventory Service)
-func (cs *checkoutService) checkWarehouse(ctx context.Context) error {
-	if cs.gcpWarehouseURL == "" {
-		log.Debug("GCP Warehouse URL not configured, skipping")
-		return nil
-	}
 
-	// GET warehouse list - this will trigger the warehouse service to call inventory service
-	warehouseData, err := cs.getJSON(ctx, cs.gcpWarehouseURL+"/warehouse")
-	if err != nil {
-		log.Warnf("Failed to check warehouse service: %v", err)
-		return err
-	}
-
-	log.Infof("Successfully checked warehouse service, received data: %v", warehouseData)
-	
-	// Optionally POST a new warehouse item
-	newWarehouseItem := map[string]interface{}{
-		"name":      "Vintage Lamp",
-		"category":  "Lighting",
-		"price":     79.99,
-		"available": true,
-	}
-
-	if err := cs.postJSON(ctx, cs.gcpWarehouseURL+"/warehouse", newWarehouseItem); err != nil {
-		log.Warnf("Failed to add warehouse item: %v", err)
-		// Don't return error, just log
-	}
-
-	log.Infof("Warehouse service check completed successfully")
-	return nil
-}
-
-// checkAccounting calls GCP Accounting Service via VPC Connector (which internally calls CRM Service)
-func (cs *checkoutService) checkAccounting(ctx context.Context, items []*pb.CartItem) error {
-	if cs.gcpAccountingURL == "" {
-		log.Debug("GCP Accounting URL not configured, skipping")
-		return nil
-	}
-
-	// GET transactions list - this will trigger the accounting service to call CRM service
-	accountingData, err := cs.getJSON(ctx, cs.gcpAccountingURL+"/transactions")
-	if err != nil {
-		log.Warnf("Failed to check accounting service: %v", err)
-		return err
-	}
-
-	log.Infof("Successfully checked accounting service, received data: %v", accountingData)
-	
-	// Optionally POST a new transaction for this order
-	// Calculate total price from cart items
-	var totalPrice float64
-	for range items {
-		// Assuming we have product info, otherwise use a placeholder
-		totalPrice += 10.00 // Placeholder price per item
-	}
-
-	newTransaction := map[string]interface{}{
-		"item":     "Online Order",
-		"price":    totalPrice,
-		"date":     "2025-10-29",
-		"customer": "Online Customer",
-	}
-
-	if err := cs.postJSON(ctx, cs.gcpAccountingURL+"/transactions", newTransaction); err != nil {
-		log.Warnf("Failed to add transaction to accounting: %v", err)
-		// Don't return error, just log
-	}
-
-	log.Infof("Accounting service check completed successfully")
-	return nil
-}
 
 // Helper method to POST JSON
 func (cs *checkoutService) postJSON(ctx context.Context, url string, data map[string]interface{}) error {

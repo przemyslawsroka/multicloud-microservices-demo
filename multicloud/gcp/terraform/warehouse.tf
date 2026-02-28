@@ -78,7 +78,7 @@ resource "google_cloud_run_v2_service" "warehouse_api_service" {
       # Environment variables
       env {
         name  = "INVENTORY_SERVICE_URL"
-        value = var.inventory_service_url
+        value = "http://${google_compute_forwarding_rule.inventory_forwarding_rule.ip_address}:8080"
       }
 
       # Resource limits

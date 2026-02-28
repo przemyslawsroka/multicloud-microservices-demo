@@ -30,17 +30,9 @@ variable "peering_vpc_network" {
   type        = string
 }
 
-variable "inventory_service_url" {
-  description = "URL of the inventory service for warehouse service to call"
-  type        = string
-  default     = ""
-}
 
-variable "crm_service_url" {
-  description = "URL of the CRM service for accounting service to call"
-  type        = string
-  default     = ""
-}
+
+
 
 variable "gcp_project_id" {
   description = "The GCP project ID (alias for project_id)"

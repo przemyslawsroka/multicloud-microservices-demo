@@ -87,7 +87,7 @@ resource "google_cloud_run_v2_service" "accounting_api_service" {
       # Environment variables
       env {
         name  = "CRM_SERVICE_URL"
-        value = var.crm_service_url
+        value = "http://${google_compute_address.crm_backend_ilb_ip.address}:8080"
       }
 
       # Resource limits

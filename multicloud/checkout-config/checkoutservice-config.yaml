@@ -8,8 +8,6 @@ data:
   GCP_CRM_URL: "http://crm.internal.boutique.local:8080"              # CRM backend VM via DNS
   GCP_INVENTORY_URL: "http://inventory.internal.boutique.local:8080"      # Inventory service via DNS
   GCP_FURNITURE_URL: "http://furniture.internal.boutique.local:8080"        # Furniture service via DNS
-  GCP_WAREHOUSE_URL: "https://warehouse-api-service-985429063844.europe-west1.run.app"  # Cloud Run
-  GCP_ACCOUNTING_URL: "https://accounting-api-service-985429063844.us-central1.run.app" # Cloud Run
   PUBSUB_TOPIC: "order-events"                     # Pub/Sub topic for OrderConfirmedEvent
   GCP_PROJECT_ID: "YOUR_GCP_PROJECT_ID"               # Replace with your GCP Project ID
 ---

@@ -13,17 +13,25 @@ Whether you are exploring the overarching Business architecture, investigating h
 
 Dive into the four fundamental views defining this architecture:
 
-### 1. [Business View](BUSINESS_VIEW.md)
+### 1. Business View
 Understand the high-level logical capabilities, enterprise resource planning structures, risk engines, and real-time operations orchestrating checkout fulfillment across the multi-cloud architecture. Features beautiful Mermaid architectural diagrams.
 
-### 2. [Networking View](NETWORKING_VIEW.md) 
+[Explore Business View](BUSINESS_VIEW.md){ .md-button .md-button--primary }
+
+### 2. Networking View
 Deeply discover how Private Service Connect, Serverless VPC Access, NAT-less Private Google Access, and advanced Cloud Load Balancing route traffic safely without exposing massive blast-radius attack vectors. This is the **primary educational module** for mastering modern networking concepts.
 
-### 3. [Technical Profiles](TECHNICAL_VIEW.md)
+[Examine Networking Topologies](NETWORKING_VIEW.md){ .md-button }
+
+### 3. Technical Profiles
 Explore our robust technical catalog delineating each discrete microservice stack (Go, Python, TypeScript, Express). See exact API integration patterns (e.g., `POST /transactions` or `GET /customers`), state management bounds, and database profiles.
 
-### 4. [Deployment Topologies](DEPLOYMENT_VIEW.md)
+[View Technical Profiles](TECHNICAL_VIEW.md){ .md-button }
+
+### 4. Deployment Topologies
 Examine how Terraform orchestrates resources, the regional vs global distributions of Google Kubernetes Engine (GKE) clusters versus Cloud Run managed serverless environments.
+
+[See Deployment Specs](DEPLOYMENT_VIEW.md){ .md-button }
 
 ---
 

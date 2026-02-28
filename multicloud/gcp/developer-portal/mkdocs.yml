@@ -1,11 +1,16 @@
 site_name: Multi-Cloud E-Commerce Demo
 site_description: Enterprise Multi-Cloud E-Commerce Architecture Documentation
 site_author: Architecture Team
+repo_name: przemyslawsroka/multicloud-microservices-demo
+repo_url: https://github.com/przemyslawsroka/multicloud-microservices-demo
 
 theme:
   name: material
-  logo: material/cloud-outline
-  favicon: material/cloud
+  icon:
+    logo: material/cloud-outline
+  font:
+    text: Roboto
+    code: Roboto Mono
   features:
     - navigation.indexes
     - navigation.tabs

@@ -185,6 +185,7 @@ resource "google_compute_address" "inventory_psc_ip_europe" {
   region       = "europe-west1"
   subnetwork   = data.google_compute_subnetwork.default_subnet_europe.id
   address_type = "INTERNAL"
+  address      = "10.132.0.3"
   description  = "Reserved IP for inventory PSC endpoint in europe-west1"
 }
 

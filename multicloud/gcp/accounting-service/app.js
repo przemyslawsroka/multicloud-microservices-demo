@@ -5,8 +5,6 @@ const port = process.env.PORT || 8080;
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-// Configuration for CRM service
-const CRM_SERVICE_URL = process.env.CRM_SERVICE_URL || '';
 
 // In-memory data store with hardcoded transactions
 let transactions = [
@@ -20,6 +18,7 @@ let nextId = 5;
 
 // Helper function to call CRM service
 async function getCustomers() {
+  const CRM_SERVICE_URL = process.env.CRM_SERVICE_URL || '';
   if (!CRM_SERVICE_URL) {
     console.log('CRM service URL not configured, skipping customer check');
     return null;
@@ -177,8 +176,11 @@ app.delete('/transactions/:id', (req, res) => {
   res.status(200).json({ message: 'Transaction deleted', transaction: deletedTransaction });
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Accounting service listening on port ${port}`);
-  console.log(`Initial transactions: ${transactions.length} transactions`);
-});
+if (require.main === module) {
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Accounting service listening on port ${port}`);
+    console.log(`Initial transactions: ${transactions.length} transactions`);
+  });
+}
 
+module.exports = app;

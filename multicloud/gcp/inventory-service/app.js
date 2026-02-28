@@ -56,7 +56,11 @@ app.post('/inventory', (req, res) => {
   res.status(201).json(updatedItem);
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log('Inventory service listening on port ' + port);
-  console.log('Initial inventory: ' + items.length + ' items');
-});
+if (require.main === module) {
+  app.listen(port, '0.0.0.0', () => {
+    console.log('Inventory service listening on port ' + port);
+    console.log('Initial inventory: ' + items.length + ' items');
+  });
+}
+
+module.exports = app;

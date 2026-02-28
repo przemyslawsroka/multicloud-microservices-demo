@@ -2,7 +2,15 @@
   "name": "mock-inventory-service",
   "version": "1.0.0",
   "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jest --detectOpenHandles"
+  },
   "dependencies": {
     "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2"
   }
 }

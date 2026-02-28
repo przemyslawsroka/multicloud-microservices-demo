@@ -2,8 +2,6 @@ const express = require('express');
 const app = express();
 
 const PORT = process.env.PORT || 8080;
-const ACCOUNTING_SERVICE_URL = process.env.ACCOUNTING_SERVICE_URL;
-const WAREHOUSE_SERVICE_URL = process.env.WAREHOUSE_SERVICE_URL;
 
 // Eventarc triggers Cloud Run with JSON body
 app.use(express.json());
@@ -22,6 +20,7 @@ app.post('/', async (req, res) => {
     console.log(`[OMS] Processing OrderConfirmedEvent for OrderID: ${orderEvent.order.order_id}`);
 
     // Native Node v18+ fetch is used here
+    const ACCOUNTING_SERVICE_URL = process.env.ACCOUNTING_SERVICE_URL;
     if (ACCOUNTING_SERVICE_URL) {
       console.log(`[OMS -> Accounting] Dispatching financial payload`);
       try {
@@ -45,6 +44,7 @@ app.post('/', async (req, res) => {
       }
     }
 
+    const WAREHOUSE_SERVICE_URL = process.env.WAREHOUSE_SERVICE_URL;
     if (WAREHOUSE_SERVICE_URL) {
       console.log(`[OMS -> Warehouse] Dispatching logistics payload`);
       try {
@@ -71,6 +71,10 @@ app.post('/', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`OrderManagement service running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`OrderManagement service running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

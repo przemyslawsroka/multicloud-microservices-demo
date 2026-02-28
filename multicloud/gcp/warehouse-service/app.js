@@ -5,8 +5,6 @@ const port = process.env.PORT || 8080;
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-// Configuration for inventory service
-const INVENTORY_SERVICE_URL = process.env.INVENTORY_SERVICE_URL || '';
 
 // In-memory data store with hardcoded warehouse items
 let warehouseItems = [
@@ -21,6 +19,7 @@ let nextId = 6;
 
 // Helper function to call inventory service
 async function checkInventory() {
+  const INVENTORY_SERVICE_URL = process.env.INVENTORY_SERVICE_URL || '';
   if (!INVENTORY_SERVICE_URL) {
     console.log('Inventory service URL not configured, skipping inventory check');
     return null;
@@ -180,6 +179,11 @@ app.post('/shipments', (req, res) => {
   });
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Warehouse service listening on port ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Warehouse service listening on port ${port}`);
+    console.log(`Initial items: ${warehouseItems.length}`);
+  });
+}
+
+module.exports = app;

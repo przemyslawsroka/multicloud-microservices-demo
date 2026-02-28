@@ -18,10 +18,12 @@ This folder contains Terraform configurations that deploy microservices across A
 
 The architectural overview, system blueprints, and detailed networking diagrams have been split into the following dedicated documents:
 
-1. **[Business View](./BUSINESS_VIEW.md)** - Logical description of enterprise IT systems.
-2. **[Technical View](./TECHNICAL_VIEW.md)** - System specifications, API communication, and integration patterns.
-3. **[Networking View](./NETWORKING_VIEW.md)** - Specification of the multicloud networking topologies (Peering vs PSC vs Serverless Egress vs Interconnect).
-4. **[Deployment View](./DEPLOYMENT_VIEW.md)** - Global physical distribution and cross-region geographical topology.
+1. **[Business View](./gcp/developer-portal/src/content/BUSINESS_VIEW.md)** - Logical description of enterprise IT systems.
+2. **[Technical View](./gcp/developer-portal/src/content/TECHNICAL_VIEW.md)** - System specifications, API communication, and integration patterns.
+3. **[Networking View](./gcp/developer-portal/src/content/NETWORKING_VIEW.md)** - Specification of the multicloud networking topologies (Peering vs PSC vs Serverless Egress vs Interconnect).
+4. **[Deployment View](./gcp/developer-portal/src/content/DEPLOYMENT_VIEW.md)** - Global physical distribution and cross-region geographical topology.
+
+*(Note: These documents are best viewed interactively by running the [Developer Portal](./gcp/developer-portal/README.md) locally!)*
 
 ## Deployment Instructions
 

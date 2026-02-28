@@ -30,3 +30,5 @@ vendor/
 *.tfplan
 tfplan
 *.log
+dist/
+src/checkoutservice/checkoutservice

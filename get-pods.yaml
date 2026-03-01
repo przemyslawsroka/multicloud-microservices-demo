@@ -1,0 +1,6 @@
+steps:
+- name: 'gcr.io/cloud-builders/kubectl'
+  args: ['get', 'pods', '-n', 'default', '-o', 'wide']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=online-boutique'

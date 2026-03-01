@@ -1,0 +1,11 @@
+steps:
+- name: 'gcr.io/cloud-builders/kubectl'
+  args: ['rollout', 'restart', 'deployment', '-n', 'default']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=online-boutique'
+- name: 'gcr.io/cloud-builders/kubectl'
+  args: ['get', 'pods', '-n', 'default']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=online-boutique'

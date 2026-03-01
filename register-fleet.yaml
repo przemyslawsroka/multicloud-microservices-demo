@@ -1,0 +1,9 @@
+steps:
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    gcloud container fleet mesh enable --project=gcp-ecommerce-demo || true
+    gcloud container fleet memberships register online-boutique --gke-cluster=us-central1/online-boutique --enable-workload-identity --project=gcp-ecommerce-demo || true
+    gcloud container fleet mesh update --management automatic --memberships online-boutique --project=gcp-ecommerce-demo || true

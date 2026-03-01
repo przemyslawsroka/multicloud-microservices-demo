@@ -1,0 +1,21 @@
+steps:
+# 1. Label the namespace (must be done before applying manifests to inject sidecars)
+- name: 'gcr.io/cloud-builders/kubectl'
+  args: ['label', 'namespace', 'default', 'istio-injection=enabled', '--overwrite']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=online-boutique'
+
+# 2. Build and apply the application manifests using skaffold
+- id: 'Deploy application to cluster'
+  name: 'gcr.io/k8s-skaffold/skaffold:v2.16.1'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - >
+    gcloud container clusters get-credentials --region=us-central1 online-boutique --project=gcp-ecommerce-demo;
+    skaffold run -f=skaffold.yaml --default-repo=us-central1-docker.pkg.dev/gcp-ecommerce-demo/online-boutique;
+
+timeout: '3600s'
+options:
+  machineType: 'N1_HIGHCPU_8'

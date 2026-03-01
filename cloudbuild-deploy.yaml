@@ -1,7 +1,7 @@
 steps:
 # 1. Label the namespace (must be done before applying manifests to inject sidecars)
 - name: 'gcr.io/cloud-builders/kubectl'
-  args: ['label', 'namespace', 'default', 'istio-injection=enabled', '--overwrite']
+  args: ['label', 'namespace', 'default', 'istio.io/rev=asm-managed', '--overwrite']
   env:
   - 'CLOUDSDK_COMPUTE_REGION=us-central1'
   - 'CLOUDSDK_CONTAINER_CLUSTER=online-boutique'

@@ -1,4 +1,4 @@
-const { runSyntheticHandler } = require('@google-cloud/synthetics');
+const { runSyntheticHandler } = require('@google-cloud/synthetics-sdk-api');
 
 const CRM_URL = process.env.CRM_URL || 'http://crm.internal.boutique.local:8080/health';
 const INVENTORY_URL = process.env.INVENTORY_URL || 'http://inventory.internal.boutique.local:8080/health';

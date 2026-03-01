@@ -20,6 +20,7 @@ resource "google_storage_bucket" "synthetics_source_bucket" {
   location      = "US"
   project       = var.project_id
   force_destroy = true
+  uniform_bucket_level_access = true
 }
 
 # Archive the internal API monitor source
@@ -60,7 +61,7 @@ resource "google_cloudfunctions2_function" "crm_synthetic_func" {
   project     = var.project_id
 
   build_config {
-    runtime     = "nodejs18"
+    runtime     = "nodejs20"
     entry_point = "SyntheticFunction"
     source {
       storage_source {
@@ -78,13 +79,8 @@ resource "google_cloudfunctions2_function" "crm_synthetic_func" {
       CRM_URL       = "http://${google_compute_address.crm_backend_ilb_ip.address}:8080/health"
       INVENTORY_URL = "SKIP" # Ignored since we only test CRM dynamically here to avoid VPC boundaries
     }
-    vpc_access {
-      network_interfaces {
-        network    = google_compute_network.crm_vpc.id
-        subnetwork = google_compute_subnetwork.crm_subnet.id
-      }
-      egress = "PRIVATE_RANGES_ONLY"
-    }
+    vpc_connector = google_vpc_access_connector.accounting_connector.id
+    vpc_connector_egress_settings = "PRIVATE_RANGES_ONLY"
   }
   depends_on = [google_project_service.synthetics_apis]
 }
@@ -106,13 +102,32 @@ resource "google_monitoring_uptime_check_config" "crm_synthetic_check" {
 # 2. Inventory Internal API Monitor (Attached to Inventory VPC)
 # -----------------------------------------------------------------------------------------
 
+resource "google_compute_subnetwork" "inventory_synthetic_connector_subnet" {
+  name          = "inventory-synthetic-connector"
+  ip_cidr_range = "10.50.0.0/28"
+  region        = "europe-west1"
+  network       = google_compute_network.inventory_vpc.id
+  project       = var.project_id
+}
+
+resource "google_vpc_access_connector" "inventory_synthetic_connector" {
+  name          = "inv-synth-connector"
+  region        = "europe-west1"
+  project       = var.project_id
+  min_instances = 2
+  max_instances = 3
+  subnet {
+    name = google_compute_subnetwork.inventory_synthetic_connector_subnet.name
+  }
+}
+
 resource "google_cloudfunctions2_function" "inventory_synthetic_func" {
   name        = "inventory-api-synthetic"
   location    = "europe-west1"
   project     = var.project_id
 
   build_config {
-    runtime     = "nodejs18"
+    runtime     = "nodejs20"
     entry_point = "SyntheticFunction"
     source {
       storage_source {
@@ -130,13 +145,8 @@ resource "google_cloudfunctions2_function" "inventory_synthetic_func" {
       CRM_URL       = "SKIP" # Ignored
       INVENTORY_URL = "http://${google_compute_forwarding_rule.inventory_forwarding_rule.ip_address}:8080/health"
     }
-    vpc_access {
-      network_interfaces {
-        network    = google_compute_network.inventory_vpc.id
-        subnetwork = google_compute_subnetwork.inventory_subnet.id
-      }
-      egress = "PRIVATE_RANGES_ONLY"
-    }
+    vpc_connector = google_vpc_access_connector.inventory_synthetic_connector.id
+    vpc_connector_egress_settings = "PRIVATE_RANGES_ONLY"
   }
   depends_on = [google_project_service.synthetics_apis]
 }
@@ -164,7 +174,7 @@ resource "google_cloudfunctions2_function" "frontend_synthetic_func" {
   project     = var.project_id
 
   build_config {
-    runtime     = "nodejs18"
+    runtime     = "nodejs20"
     entry_point = "SyntheticFunction"
     source {
       storage_source {
@@ -187,7 +197,7 @@ resource "google_cloudfunctions2_function" "frontend_synthetic_func" {
 
 resource "google_monitoring_uptime_check_config" "frontend_synthetic_check" {
   display_name = "Frontend User Journey Synthetic Check"
-  timeout      = "120s"
+  timeout      = "60s"
   period       = "300s"
   project      = var.project_id
 

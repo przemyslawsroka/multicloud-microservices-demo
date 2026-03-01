@@ -67,7 +67,6 @@ resource "google_sql_user" "crm_user" {
 resource "google_compute_address" "crm_db_psc_ip" {
   name         = "crm-db-psc-ip"
   region       = "asia-east1"
-  network      = google_compute_network.crm_vpc.id
   subnetwork   = google_compute_subnetwork.crm_subnet.id
   address_type = "INTERNAL"
   address      = "10.3.0.200" # Reserved static IP inside crm_subnet specifically for the DB

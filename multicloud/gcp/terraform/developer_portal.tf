@@ -54,17 +54,17 @@ resource "google_cloud_run_service_iam_policy" "noauth_portal" {
 
 # Attach external domain to Cloud Run (via DNS verification)
 # We map docs.multicloud-demo.example.com to this Cloud Run Service
-resource "google_cloud_run_domain_mapping" "docs_domain" {
-  name     = "docs.${google_dns_managed_zone.public_zone.dns_name}"
-  location = google_cloud_run_service.developer_portal.location
-  project  = google_cloud_run_service.developer_portal.project
-  metadata {
-    namespace = var.project_id
-  }
-  spec {
-    route_name = google_cloud_run_service.developer_portal.name
-  }
-}
+# resource "google_cloud_run_domain_mapping" "docs_domain" {
+#   name     = "docs.${google_dns_managed_zone.public_zone.dns_name}"
+#   location = google_cloud_run_service.developer_portal.location
+#   project  = google_cloud_run_service.developer_portal.project
+#   metadata {
+#     namespace = var.project_id
+#   }
+#   spec {
+#     route_name = google_cloud_run_service.developer_portal.name
+#   }
+# }
 
 output "portal_url" {
   value = google_cloud_run_service.developer_portal.status[0].url

@@ -32,7 +32,7 @@ resource "google_dns_managed_zone" "internal_zone" {
     }
     networks {
       # Peer Network containing the GKE Cluster
-      network_url = "projects/${var.project_id}/global/networks/online-boutique-vpc"
+      network_url = google_compute_network.ob_vpc.id
     }
   }
 

@@ -31,8 +31,8 @@ resource "google_pubsub_subscription" "bq_order_events_sub" {
 
   bigquery_config {
     table            = "${data.google_project.project.project_id}.${google_bigquery_dataset.enterprise_data_lake.dataset_id}.${google_bigquery_table.order_events.table_id}"
-    use_topic_schema = true
-    write_metadata   = true # Writes publish_time, subscription_name, message_id to columns
+    use_table_schema = true
+    write_metadata   = false # Requires specific columns if true
   }
 
   depends_on = [

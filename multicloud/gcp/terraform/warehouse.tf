@@ -26,22 +26,15 @@ resource "google_artifact_registry_repository" "warehouse_repo" {
 }
 
 # Reference to the inventory VPC network
-data "google_compute_network" "inventory_vpc" {
-  name    = "inventory-vpc"
-  project = var.project_id
-}
+
 
 # Reference to the inventory subnet
-data "google_compute_subnetwork" "inventory_subnet" {
-  name    = "inventory-subnet"
-  region  = "europe-west1"
-  project = var.project_id
-}
+
 
 # Firewall rule to allow Cloud Run to access inventory service
 resource "google_compute_firewall" "allow_cloud_run_to_inventory" {
   name    = "allow-cloud-run-to-inventory"
-  network = data.google_compute_network.inventory_vpc.name
+  network = google_compute_network.inventory_vpc.name
   project = var.project_id
 
   allow {
@@ -100,8 +93,8 @@ resource "google_cloud_run_v2_service" "warehouse_api_service" {
     vpc_access {
       # Use Direct VPC egress (recommended over VPC connector)
       network_interfaces {
-        network    = data.google_compute_network.inventory_vpc.id
-        subnetwork = data.google_compute_subnetwork.inventory_subnet.id
+        network    = google_compute_network.inventory_vpc.id
+        subnetwork = google_compute_subnetwork.inventory_subnet.id
       }
       # Route only private ranges through VPC (more efficient)
       egress = "PRIVATE_RANGES_ONLY"
@@ -144,8 +137,8 @@ output "warehouse_artifact_registry" {
 output "warehouse_vpc_config" {
   description = "VPC configuration for warehouse service"
   value = {
-    network    = data.google_compute_network.inventory_vpc.name
-    subnetwork = data.google_compute_subnetwork.inventory_subnet.name
+    network    = google_compute_network.inventory_vpc.name
+    subnetwork = google_compute_subnetwork.inventory_subnet.name
     region     = "europe-west1"
   }
 }

@@ -1,4 +1,4 @@
-const { runSyntheticHandler } = require('@google-cloud/synthetics');
+const { runSyntheticHandler } = require('@google-cloud/synthetics-sdk-api');
 const puppeteer = require('puppeteer');
 
 const TARGET_URL = process.env.TARGET_URL || 'http://YOUR_FRONTEND_EXTERNAL_IP';

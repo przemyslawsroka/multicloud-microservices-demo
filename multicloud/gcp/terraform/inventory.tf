@@ -1,10 +1,12 @@
 # inventory.tf - GCP Inventory Service with Private IP and PSC
 # Note: Uses shared terraform, variable, and provider configurations from main.tf
 
-# Data source to get the default subnet in europe-west1 (where GKE cluster is located)
-data "google_compute_subnetwork" "default_subnet_europe" {
-  name   = "online-boutique-vpc"
-  region = "europe-west1"
+# Data source to get the online boutique subnet in europe-west1
+data "google_compute_subnetwork" "ob_subnet_europe" {
+  name       = google_compute_network.ob_vpc.name
+  region     = "europe-west1"
+  project    = var.project_id
+  depends_on = [google_compute_network.ob_vpc]
 }
 
 # 1. Create a dedicated VPC network for the inventory service
@@ -183,7 +185,7 @@ resource "google_compute_region_health_check" "inventory_health_check" {
 resource "google_compute_address" "inventory_psc_ip_europe" {
   name         = "inventory-psc-ip-europe"
   region       = "europe-west1"
-  subnetwork   = data.google_compute_subnetwork.default_subnet_europe.id
+  subnetwork   = data.google_compute_subnetwork.ob_subnet_europe.id
   address_type = "INTERNAL"
   address      = "10.132.0.3"
   description  = "Reserved IP for inventory PSC endpoint in europe-west1"
@@ -196,7 +198,7 @@ resource "google_compute_forwarding_rule" "inventory_psc_endpoint_europe" {
   allow_psc_global_access = true
   load_balancing_scheme   = ""
   target                  = google_compute_service_attachment.inventory_psc_attachment.id
-  network                 = "online-boutique-vpc" # Connect from online-boutique-vpc network
+  network                 = google_compute_network.ob_vpc.id # Connect from OB network
   ip_address              = google_compute_address.inventory_psc_ip_europe.self_link
 
   # This provides PSC access from europe-west1 region and as it is global, gke cluster from u-central1 should be able to access it

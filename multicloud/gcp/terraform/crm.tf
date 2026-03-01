@@ -31,7 +31,7 @@ resource "google_compute_subnetwork" "crm_subnet" {
 resource "google_compute_address" "crm_backend_static_ip" {
   name         = "crm-backend-static-ip"
   address_type = "INTERNAL"
-  address      = "10.3.0.2"
+  address      = "10.3.0.20"
   region       = "asia-east1"
   subnetwork   = google_compute_subnetwork.crm_subnet.id
   description  = "Static internal IP for CRM backend VM"
@@ -40,7 +40,7 @@ resource "google_compute_address" "crm_backend_static_ip" {
 resource "google_compute_address" "crm_frontend_static_ip" {
   name         = "crm-frontend-static-ip"
   address_type = "INTERNAL"
-  address      = "10.3.0.3"
+  address      = "10.3.0.30"
   region       = "asia-east1"
   subnetwork   = google_compute_subnetwork.crm_subnet.id
   description  = "Static internal IP for CRM frontend VM"
@@ -49,7 +49,7 @@ resource "google_compute_address" "crm_frontend_static_ip" {
 resource "google_compute_address" "crm_status_static_ip" {
   name         = "crm-status-static-ip"
   address_type = "INTERNAL"
-  address      = "10.3.0.4"
+  address      = "10.3.0.40"
   region       = "asia-east1"
   subnetwork   = google_compute_subnetwork.crm_subnet.id
   description  = "Static internal IP for CRM status VM"
@@ -74,7 +74,7 @@ resource "google_project_service" "storage_api" {
 
 # 2d. Create Cloud Storage bucket for CRM API logs
 resource "google_storage_bucket" "crm_logs_bucket" {
-  name          = "crm-online-boutique-bucket"
+  name          = "crm-online-boutique-bucket-${random_id.db_name_suffix.hex}"
   location      = "US-CENTRAL1"
   storage_class = "STANDARD"
   project       = var.project_id
@@ -207,7 +207,7 @@ resource "google_compute_instance_group" "crm_backend_group" {
   zone        = "asia-east1-a"
 
   instances = [
-    google_compute_instance.crm_vm.id
+    google_compute_instance.crm_vm.self_link
   ]
 
   named_port {
@@ -239,7 +239,8 @@ resource "google_compute_region_backend_service" "crm_backend_service" {
   health_checks         = [google_compute_health_check.crm_backend_health_check.id]
 
   backend {
-    group = google_compute_instance_group.crm_backend_group.id
+    group          = google_compute_instance_group.crm_backend_group.id
+    balancing_mode = "CONNECTION"
   }
 }
 
@@ -248,6 +249,7 @@ resource "google_compute_address" "crm_backend_ilb_ip" {
   name         = "crm-backend-ilb-ip"
   subnetwork   = google_compute_subnetwork.crm_subnet.id
   address_type = "INTERNAL"
+  address      = "10.3.0.10"
   region       = "asia-east1"
   description  = "Static internal IP for CRM backend ILB"
 }
@@ -303,7 +305,7 @@ output "crm_subnet_cidr" {
 resource "google_compute_network_peering" "crm_to_ob" {
   name         = "crm-to-ob-peering"
   network      = google_compute_network.crm_vpc.id
-  peer_network = "projects/${var.project_id}/global/networks/online-boutique-vpc"
+  peer_network = google_compute_network.ob_vpc.id
 
   import_custom_routes = false
   export_custom_routes = false
@@ -312,7 +314,7 @@ resource "google_compute_network_peering" "crm_to_ob" {
 # 6. Create VPC peering from online-boutique-vpc VPC to crm-vpc  
 resource "google_compute_network_peering" "ob_to_crm" {
   name         = "ob-to-crm-peering"
-  network      = "projects/${var.project_id}/global/networks/online-boutique-vpc"
+  network      = google_compute_network.ob_vpc.id
   peer_network = google_compute_network.crm_vpc.id
 
   import_custom_routes = false
@@ -334,7 +336,7 @@ resource "google_compute_network_peering" "ob_to_crm" {
 # 8. Create VPC peering from online-boutique-vpc VPC to remote  
 resource "google_compute_network_peering" "ob_to_remote" {
   name         = "ob-to-remote-peering"
-  network      = "projects/${var.project_id}/global/networks/online-boutique-vpc"
+  network      = google_compute_network.ob_vpc.id
   peer_network = "projects/${var.peering_project_id}/global/networks/${var.peering_vpc_network}"
 
   import_custom_routes = true
@@ -383,7 +385,7 @@ resource "google_compute_instance_group" "crm_frontend_group" {
   zone        = "asia-east1-a"
 
   instances = [
-    google_compute_instance.crm_frontend_vm.id
+    google_compute_instance.crm_frontend_vm.self_link
   ]
 
   named_port {

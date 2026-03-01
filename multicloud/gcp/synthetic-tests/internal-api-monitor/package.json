@@ -4,6 +4,6 @@
   "description": "Synthetic monitor for internal API health checks",
   "main": "index.js",
   "dependencies": {
-    "@google-cloud/synthetics": "^1.2.0"
+    "@google-cloud/synthetics-sdk-api": "*"
   }
 }

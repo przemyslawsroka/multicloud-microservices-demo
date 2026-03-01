@@ -6,11 +6,15 @@ terraform {
       source  = "hashicorp/google"
       version = ">= 4.50.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.4.0"
+    }
   }
 
   # Remote state configuration - store in GCS bucket
   backend "gcs" {
-    bucket = "YOUR_GCP_PROJECT_ID-terraform-state"
+    bucket = "gcp-ecommerce-demo-terraform-state"
     prefix = "terraform/state"
   }
 }
@@ -73,4 +77,14 @@ variable "ob_gke_pod_range" {
 provider "google" {
   project = var.project_id != "" ? var.project_id : var.gcp_project_id
   region  = var.region
-} 
+}
+
+provider "google-beta" {
+  project = var.project_id
+}
+
+resource "google_compute_network" "ob_vpc" {
+  name                    = var.ob_network_name
+  auto_create_subnetworks = true
+  project                 = var.project_id
+}

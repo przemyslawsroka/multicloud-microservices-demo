@@ -26,17 +26,14 @@ resource "google_artifact_registry_repository" "accounting_repo" {
 }
 
 # Reference to the CRM VPC network
-data "google_compute_network" "crm_vpc" {
-  name    = "crm-vpc"
-  project = var.project_id
-}
+
 
 # Create VPC Connector for accessing CRM service
 # Note: VPC Connector uses a dedicated /28 subnet (16 IPs)
 resource "google_vpc_access_connector" "accounting_connector" {
   name          = "accounting-connector"
   region        = "us-central1"
-  network       = data.google_compute_network.crm_vpc.name
+  network       = google_compute_network.crm_vpc.name
   ip_cidr_range = "10.3.1.0/28" # Dedicated range for connector (16 IPs)
 
   # Connector throughput settings
@@ -51,7 +48,7 @@ resource "google_vpc_access_connector" "accounting_connector" {
 # Firewall rule to allow VPC Connector to access CRM service
 resource "google_compute_firewall" "allow_connector_to_crm" {
   name    = "allow-accounting-connector-to-crm"
-  network = data.google_compute_network.crm_vpc.name
+  network = google_compute_network.crm_vpc.name
   project = var.project_id
 
   allow {
@@ -73,6 +70,7 @@ resource "google_cloud_run_v2_service" "accounting_api_service" {
   name     = "accounting-api-service"
   location = "us-central1"
   project  = var.project_id
+  deletion_protection = false
 
   template {
     containers {
@@ -153,7 +151,7 @@ output "accounting_vpc_connector" {
   value = {
     name       = google_vpc_access_connector.accounting_connector.name
     ip_range   = google_vpc_access_connector.accounting_connector.ip_cidr_range
-    network    = data.google_compute_network.crm_vpc.name
+    network    = google_compute_network.crm_vpc.name
     throughput = "${google_vpc_access_connector.accounting_connector.min_throughput}-${google_vpc_access_connector.accounting_connector.max_throughput} Mbps"
   }
 }

@@ -4,7 +4,7 @@
   "description": "Puppeteer script for validating overarching UI routing map",
   "main": "index.js",
   "dependencies": {
-    "@google-cloud/synthetics": "^1.2.0",
-    "puppeteer": "^21.0.0"
+    "puppeteer": "^21.0.0",
+    "@google-cloud/synthetics-sdk-api": "*"
   }
 }

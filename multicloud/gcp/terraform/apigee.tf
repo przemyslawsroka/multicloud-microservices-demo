@@ -71,7 +71,7 @@ resource "google_api_gateway_gateway" "b2b_gw" {
   provider   = google-beta
   api_config = google_api_gateway_api_config.b2b_api_cfg.id
   gateway_id = "apigee-b2b-gateway" # Name reflects the requested Apigee architecture
-  region     = "us-west1"
+  region     = "us-central1"
   project    = var.project_id
 
   depends_on = [google_api_gateway_api_config.b2b_api_cfg]

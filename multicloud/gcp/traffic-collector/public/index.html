@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OOB Packet Mirroring Collector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="background-gradient"></div>
+    <div class="app-container">
+        <header class="glass-header">
+            <div class="logo">
+                <span class="pulse-dot"></span>
+                <h1>OOB Mirroring <span>Collector</span></h1>
+            </div>
+            <div class="status-badge">
+                <span class="status-indicator active"></span> Listening on UDP :6081
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <section class="card glass-card top-stats">
+                <div class="stat-box">
+                    <h3>Total Packets Captured</h3>
+                    <div id="stat-total-packets" class="stat-value">---</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Total Mirrored Data</h3>
+                    <div id="stat-total-bytes" class="stat-value">---</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Active Flow Signatures</h3>
+                    <div id="stat-active-flows" class="stat-value">---</div>
+                </div>
+            </section>
+
+            <section class="card glass-card chart-section">
+                <h2>Mirrored Traffic by Protocol</h2>
+                <div class="chart-container">
+                    <canvas id="protocolChart"></canvas>
+                </div>
+            </section>
+
+            <section class="card glass-card packet-feed">
+                <div class="table-header-row">
+                    <h2>Live Packet Stream</h2>
+                    <button id="toggle-stream" class="btn primary-btn">Pause Stream</button>
+                </div>
+                <div class="table-container">
+                    <table id="packet-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Source</th>
+                                <th>Destination</th>
+                                <th>Protocol</th>
+                                <th>Size (B)</th>
+                                <th>Detected Pattern</th>
+                            </tr>
+                        </thead>
+                        <tbody id="packet-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Payload Details Modal -->
+    <div id="payload-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3>Packet Analysis</h3>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="packet-meta" id="modal-meta">
+                    <!-- populated by js -->
+                </div>
+                <h4 style="margin-bottom:0.5rem">Hex Dump & ASCII</h4>
+                <div class="payload-hex" id="modal-payload">
+                    <!-- populated by js -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

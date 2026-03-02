@@ -1,7 +1,6 @@
 # out_of_band.tf
 # Setup custom packet mirroring using modern network security out-of-band integration.
 
-# 1. Collector ILB Forwarding Rule (dummy backend for demonstration)
 resource "google_compute_region_backend_service" "oob_collector_backend" {
   project = var.project_id
   provider              = google-beta
@@ -10,6 +9,11 @@ resource "google_compute_region_backend_service" "oob_collector_backend" {
   health_checks         = [google_compute_health_check.oob_collector_hc.id]
   load_balancing_scheme = "INTERNAL"
   protocol              = "UDP"
+
+  backend {
+    group          = google_compute_instance_group.oob_collector_ig.self_link
+    balancing_mode = "CONNECTION"
+  }
 }
 
 resource "google_compute_health_check" "oob_collector_hc" {
@@ -128,3 +132,74 @@ resource "google_network_security_mirroring_endpoint_group_association" "oob_meg
 #   firewall_policy   = google_compute_network_firewall_policy.oob_policy.name
 #   attachment_target = google_compute_network.crm_vpc.id
 # }
+
+# ============================================================================
+# TRAFFIC COLLECTOR VM (DPI Engine)
+# ============================================================================
+
+resource "google_compute_address" "oob_collector_ip" {
+  project      = var.project_id
+  name         = "oob-collector-ip"
+  address_type = "INTERNAL"
+  region       = "asia-east1"
+  subnetwork   = google_compute_subnetwork.crm_subnet.id
+}
+
+resource "google_compute_instance" "oob_collector_vm" {
+  project      = var.project_id
+  name         = "traffic-collector-vm"
+  machine_type = "e2-small"
+  zone         = "asia-east1-a"
+  tags         = ["oob-collector", "http-server"]
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-11"
+    }
+  }
+
+  network_interface {
+    network    = google_compute_network.crm_vpc.id
+    subnetwork = google_compute_subnetwork.crm_subnet.id
+    network_ip = google_compute_address.oob_collector_ip.address
+    access_config {} # Give it external IP to download pip/flask easily
+  }
+
+  metadata_startup_script = file("${path.module}/../traffic-collector/startup.sh")
+
+  metadata = {
+    collector_py = file("${path.module}/../traffic-collector/api/collector.py")
+    index_html   = file("${path.module}/../traffic-collector/public/index.html")
+    style_css    = file("${path.module}/../traffic-collector/public/style.css")
+    app_js       = file("${path.module}/../traffic-collector/public/app.js")
+  }
+}
+
+resource "google_compute_instance_group" "oob_collector_ig" {
+  project     = var.project_id
+  name        = "oob-collector-ig"
+  zone        = "asia-east1-a"
+  instances   = [google_compute_instance.oob_collector_vm.self_link]
+}
+
+# Add a firewall rule to allow OOB LB and Health checks to reach the VM
+resource "google_compute_firewall" "allow_oob_collector" {
+  project = var.project_id
+  name    = "allow-oob-collector"
+  network = google_compute_network.crm_vpc.name
+  allow {
+    protocol = "udp"
+    ports    = ["6081"]
+  }
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "5000"]
+  }
+  source_ranges = ["0.0.0.0/0", "130.211.0.0/22", "35.191.0.0/16"]
+  target_tags   = ["oob-collector"]
+}
+
+output "traffic_collector_dashboard" {
+  value = "http://${google_compute_instance.oob_collector_vm.network_interface.0.access_config.0.nat_ip}:5000"
+}
+

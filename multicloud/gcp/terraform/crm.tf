@@ -351,8 +351,9 @@ resource "google_compute_network_peering" "ob_to_remote" {
 # 9. Create CRM Frontend VM instance with static IP
 resource "google_compute_instance" "crm_frontend_vm" {
   name         = "crm-frontend-vm"
-  machine_type = "e2-micro"
+  machine_type = "e2-small"
   zone         = "asia-east1-a"
+  allow_stopping_for_update = true
 
   tags = ["crm-frontend", "http-server"]
 

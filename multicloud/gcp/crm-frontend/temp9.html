@@ -473,7 +473,7 @@
                         const events = await res.json();
                         let reply = 'No response from AI yet...';
                         for (const e of events) {
-                            if (e.content && e.content.parts) {
+                            if (e.author === 'frontend_concierge' && e.content && e.content.parts) {
                                 const txt = e.content.parts.find(c => c.text);
                                 if (txt && txt.text) reply = txt.text;
                             }

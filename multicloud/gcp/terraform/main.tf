@@ -85,6 +85,19 @@ provider "google-beta" {
 
 resource "google_compute_network" "ob_vpc" {
   name                    = var.ob_network_name
-  auto_create_subnetworks = true
+  auto_create_subnetworks = false
   project                 = var.project_id
+
+  lifecycle {
+    ignore_changes = [auto_create_subnetworks]
+  }
+}
+
+resource "google_network_management_vpc_flow_logs_config" "ob_vpc_flow_logs" {
+  vpc_flow_logs_config_id = "online-boutique-vpc-flow-logs"
+  location                = "global"
+  network                 = google_compute_network.ob_vpc.id
+  state                   = "ENABLED"
+  flow_sampling           = 1.0
+  aggregation_interval    = "INTERVAL_5_SEC"
 }

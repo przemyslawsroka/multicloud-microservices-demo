@@ -375,6 +375,7 @@ resource "google_compute_instance" "crm_frontend_vm" {
   metadata = {
     app_js       = file("${path.module}/../crm-frontend/app.js")
     package_json = file("${path.module}/../crm-frontend/package.json")
+    index_html   = file("${path.module}/../crm-frontend/index.html")
     backend_url  = "http://${google_compute_address.crm_backend_ilb_ip.address}:8080/customers"
   }
 }

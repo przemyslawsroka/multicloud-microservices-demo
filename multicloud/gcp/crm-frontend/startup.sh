@@ -18,6 +18,9 @@ curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMeta
 # Create the frontend app.js file
 curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/app_js > app.js
 
+# Create the frontend index.html file
+curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/index_html > index.html
+
 # Retrieve backend url from metadata
 BACKEND_URL=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/backend_url || echo "")
 

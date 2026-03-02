@@ -50,7 +50,7 @@ export const crmDatabaseQueryTool = new FunctionTool({
 const crmWorkerAgent = new LlmAgent({
   name: 'crm_investigator',
   model: new Gemini({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     vertexai: true,
     project: process.env.GOOGLE_CLOUD_PROJECT || 'gcp-ecommerce-demo',
     location: 'us-central1'
@@ -72,7 +72,7 @@ const crmWorkerAgent = new LlmAgent({
 export const conciergeAgent = new LlmAgent({
   name: 'frontend_concierge',
   model: new Gemini({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     vertexai: true,
     project: process.env.GOOGLE_CLOUD_PROJECT || 'gcp-ecommerce-demo',
     location: 'us-central1'

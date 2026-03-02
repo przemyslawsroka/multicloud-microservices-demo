@@ -27,6 +27,7 @@ spec:
       labels:
         app: cartservice
       annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "false"
         proxy.istio.io/config: '{ "holdApplicationUntilProxyStarts": true }'
     spec:
       serviceAccountName: cartservice

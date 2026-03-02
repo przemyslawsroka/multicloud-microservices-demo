@@ -259,6 +259,7 @@ resource "google_compute_forwarding_rule" "crm_backend_ilb_forwarding_rule" {
   name                  = "crm-backend-ilb-forwarding-rule"
   region                = "asia-east1"
   load_balancing_scheme = "INTERNAL"
+  allow_global_access   = true
   ports                 = ["8080"]
   network               = google_compute_network.crm_vpc.id
   subnetwork            = google_compute_subnetwork.crm_subnet.id

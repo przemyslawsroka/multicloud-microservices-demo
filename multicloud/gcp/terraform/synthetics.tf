@@ -176,6 +176,9 @@ resource "google_cloudfunctions2_function" "frontend_synthetic_func" {
   build_config {
     runtime     = "nodejs20"
     entry_point = "SyntheticFunction"
+    environment_variables = {
+      PUPPETEER_CACHE_DIR = "/workspace/.cache/puppeteer"
+    }
     source {
       storage_source {
         bucket = google_storage_bucket.synthetics_source_bucket.name
@@ -189,7 +192,8 @@ resource "google_cloudfunctions2_function" "frontend_synthetic_func" {
     available_memory   = "2G" # Puppeteer requires significant memory overhead
     timeout_seconds    = 120
     environment_variables = {
-      TARGET_URL = "http://frontend.public.boutique.local" # Adjust dynamically if frontend yields an IP
+      PUPPETEER_CACHE_DIR = "/workspace/.cache/puppeteer"
+      TARGET_URL = "http://34.59.102.231" # Adjust dynamically if frontend yields an IP
     }
   }
   depends_on = [google_project_service.synthetics_apis]

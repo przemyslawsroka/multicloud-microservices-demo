@@ -1,0 +1,6 @@
+steps:
+- name: 'gcr.io/cloud-builders/kubectl'
+  args: ['logs', 'pod/frontend-5db69956cb-d5cct', '-c', 'istio-proxy']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=online-boutique'

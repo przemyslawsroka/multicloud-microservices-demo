@@ -26,6 +26,31 @@ resource "google_network_management_vpc_flow_logs_config" "inventory_vpc_flow_lo
   aggregation_interval    = "INTERVAL_5_SEC"
 }
 
+# 1b. Create Cloud Router for NAT in Inventory VPC
+resource "google_compute_router" "inventory_router" {
+  name    = "inventory-router"
+  region  = "europe-west1"
+  network = google_compute_network.inventory_vpc.id
+
+  bgp {
+    asn = 64515
+  }
+}
+
+# 1c. Create Cloud NAT for inventory internet access
+resource "google_compute_router_nat" "inventory_nat" {
+  name                               = "inventory-nat"
+  router                             = google_compute_router.inventory_router.name
+  region                             = "europe-west1"
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+
+  log_config {
+    enable = true
+    filter = "ERRORS_ONLY"
+  }
+}
+
 # 2. Create a subnet in the inventory VPC
 resource "google_compute_subnetwork" "inventory_subnet" {
   name          = "inventory-subnet"

@@ -449,7 +449,7 @@
                 document.getElementById('chatTyping').style.display = 'block';
 
                 try {
-                    const res = await fetch('http://localhost:9083/v1/chat', {
+                    const res = await fetch('/v1/chat', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ message: msg, sessionId: agentSessionId })

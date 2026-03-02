@@ -431,10 +431,52 @@ resource "google_compute_backend_service" "crm_frontend_backend" {
   }
 }
 
+# 12b. Create serverless NEG for Cloud Run Agent
+resource "google_compute_region_network_endpoint_group" "crm_agent_neg" {
+  name                  = "crm-agent-neg"
+  network_endpoint_type = "SERVERLESS"
+  region                = "asia-east1"
+  cloud_run {
+    service = "crm-agent"
+  }
+}
+
+# 12c. Create backend service for the Agent
+resource "google_compute_backend_service" "crm_agent_backend" {
+  name                  = "crm-agent-backend"
+  protocol              = "HTTPS"
+  timeout_sec           = 30
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  backend {
+    group = google_compute_region_network_endpoint_group.crm_agent_neg.id
+  }
+
+  log_config {
+    enable      = true
+    sample_rate = 1.0
+  }
+}
+
 # 13. Create URL map
 resource "google_compute_url_map" "crm_frontend_url_map" {
   name            = "crm-frontend-url-map"
   default_service = google_compute_backend_service.crm_frontend_backend.id
+
+  host_rule {
+    hosts        = ["*"]
+    path_matcher = "crm-frontend-matcher"
+  }
+
+  path_matcher {
+    name            = "crm-frontend-matcher"
+    default_service = google_compute_backend_service.crm_frontend_backend.id
+
+    path_rule {
+      paths   = ["/v1/*"]
+      service = google_compute_backend_service.crm_agent_backend.id
+    }
+  }
 }
 
 # 14. Create target HTTP proxy

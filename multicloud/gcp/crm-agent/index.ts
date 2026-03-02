@@ -12,7 +12,7 @@ import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 // ==========================================
 export const crmDatabaseQueryTool = new FunctionTool({
   name: 'crm_database_query',
-  description: 'Perform a deterministic query on the CRM database utilizing the standard Model Context Protocol (MCP). Use operation "lookup_customer" (params: name, surname) or "find_order" (params: trackingId).',
+  description: 'Perform a deterministic query on the CRM database using MCP. Use operation "lookup_customer" (params: name, surname) to retrieve customer details including lifetime revenue, or "find_order" (params: trackingId).',
   parameters: z.object({
     operation: z.enum(['lookup_customer', 'find_order']),
     name: z.string().optional(),
@@ -59,7 +59,7 @@ const crmWorkerAgent = new LlmAgent({
   instruction: `
     You are the 'CRM Investigator', a specialized back-office worker agent.
     You have exclusive access to the CRM Backend database via the Model Context Protocol (MCP).
-    When asked about a customer or order, you MUST use the 'crm_database_query' tool.
+    When asked about a customer, order, or their lifetime revenue metrics, you MUST use the 'crm_database_query' tool.
     Never guess data. Only report exactly what the database tool returns.
   `
 });

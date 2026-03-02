@@ -473,7 +473,7 @@ resource "google_compute_url_map" "crm_frontend_url_map" {
     default_service = google_compute_backend_service.crm_frontend_backend.id
 
     path_rule {
-      paths   = ["/v1/*"]
+      paths   = ["/apps/*", "/run*", "/dev-ui", "/dev-ui/*", "/list-apps*", "/debug/*"]
       service = google_compute_backend_service.crm_agent_backend.id
     }
   }

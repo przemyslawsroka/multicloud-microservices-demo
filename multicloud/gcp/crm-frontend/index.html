@@ -449,16 +449,38 @@
                 document.getElementById('chatTyping').style.display = 'block';
 
                 try {
-                    const res = await fetch('/v1/chat', {
+                    // Initialize strictly scoped session against native ADK framework mapping
+                    const checkRes = await fetch(`/apps/index/users/crm-customer/sessions/${agentSessionId}`);
+                    if (!checkRes.ok) {
+                        await fetch(`/apps/index/users/crm-customer/sessions/${agentSessionId}`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: {} })
+                        });
+                    }
+
+                    // Native payload
+                    const res = await fetch('/run', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: msg, sessionId: agentSessionId })
+                        body: JSON.stringify({
+                            appName: 'index',
+                            userId: 'crm-customer',
+                            sessionId: agentSessionId,
+                            newMessage: { role: 'user', parts: [{ text: msg }] }
+                        })
                     });
+
                     if (res.ok) {
-                        const data = await res.json();
-                        appendChat('agent', data.response || 'No response from AI.');
+                        const events = await res.json();
+                        let reply = 'No response from AI yet...';
+                        for (const e of events) {
+                            if (e.author === 'frontend_concierge' && e.content && e.content.parts) {
+                                const txt = e.content.parts.find(c => c.text);
+                                if (txt && txt.text) reply = txt.text;
+                            }
+                        }
+                        appendChat('agent', reply);
                     } else { appendChat('agent', 'Error connecting to Local AI Server.'); }
-                } catch (e) { appendChat('agent', 'Fatal connection failure to ADK Agent Port 9083.'); }
+                } catch (e) { appendChat('agent', 'Fatal connection failure to ADK backend layer.'); }
                 finally { document.getElementById('chatTyping').style.display = 'none'; }
             }
 

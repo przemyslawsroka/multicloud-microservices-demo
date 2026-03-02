@@ -20,7 +20,8 @@ export const crmDatabaseQueryTool = new FunctionTool({
     trackingId: z.string().optional()
   }),
   execute: async (params) => {
-    const transport = new SSEClientTransport(new URL('http://localhost:9081/sse'));
+    const backendUrl = process.env.CRM_BACKEND_URL || 'http://localhost:9081';
+    const transport = new SSEClientTransport(new URL(`${backendUrl}/sse`));
     const client = new Client({ name: "adk-backend-worker", version: "1.0.0" }, { capabilities: {} });
 
     try {
@@ -48,7 +49,12 @@ export const crmDatabaseQueryTool = new FunctionTool({
 // The worker is explicitly given access to the MCP layer. It understands database models.
 const crmWorkerAgent = new LlmAgent({
   name: 'crm_investigator',
-  model: new Gemini({ model: 'gemini-3-flash-preview', vertexai: true }),
+  model: new Gemini({
+    model: 'gemini-2.0-flash-exp',
+    vertexai: true,
+    project: process.env.GOOGLE_CLOUD_PROJECT || 'gcp-ecommerce-demo',
+    location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+  }),
   tools: [crmDatabaseQueryTool],
   instruction: `
     You are the 'CRM Investigator', a specialized back-office worker agent.
@@ -65,7 +71,12 @@ const crmWorkerAgent = new LlmAgent({
 // to ask the crm_investigator to do the heavy lifting safely.
 export const conciergeAgent = new LlmAgent({
   name: 'frontend_concierge',
-  model: new Gemini({ model: 'gemini-3-flash-preview', vertexai: true }),
+  model: new Gemini({
+    model: 'gemini-2.0-flash-exp',
+    vertexai: true,
+    project: process.env.GOOGLE_CLOUD_PROJECT || 'gcp-ecommerce-demo',
+    location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+  }),
   subAgents: [crmWorkerAgent],
   // tools: [crmWorkerAgent.asTool()], // In ADK 0.2+, subAgents property handles A2A delegation magically, but asTool() is explicitly clear.
   instruction: `
@@ -77,3 +88,5 @@ export const conciergeAgent = new LlmAgent({
     Remember, we do not have a hardcoded 'VIP' status flag. VIP is purely based on how much they've spent (e.g. over $1000).
   `
 });
+
+export default conciergeAgent;

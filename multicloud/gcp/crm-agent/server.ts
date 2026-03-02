@@ -54,7 +54,7 @@ app.post('/v1/chat/clear', async (req, res) => {
   res.json({ success: true, message: "Use a new sessionId to clear context." });
 });
 
-const PORT = 9083;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 9083;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`ADK Agent (Concierge) running on port ${PORT}`);
 });

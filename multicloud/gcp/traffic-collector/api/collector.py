@@ -45,6 +45,66 @@ def analyze_payload(data):
     except Exception:
         pass
     return "None"
+def decode_geneve(data):
+    if len(data) < 8:
+        return None
+        
+    try:
+        # Geneve header: first byte contains Ver (2 bits) and Opt Len (6 bits)
+        opt_len = (data[0] & 0x3f) * 4
+        geneve_len = 8 + opt_len
+        
+        # Protocol Type (offset 2-3)
+        proto_type = (data[2] << 8) + data[3]
+        offset = geneve_len
+        
+        # Transparent Ethernet Bridging (0x6558)
+        if proto_type == 0x6558:
+            if len(data) < offset + 14: return None
+            eth_type = (data[offset+12] << 8) + data[offset+13]
+            offset += 14
+            
+            # 802.1Q VLAN tag
+            if eth_type == 0x8100:
+                if len(data) < offset + 4: return None
+                eth_type = (data[offset+2] << 8) + data[offset+3]
+                offset += 4
+                
+            if eth_type != 0x0800: # Only IPv4
+                return None
+                
+        # Raw IPv4 (0x0800)
+        elif proto_type != 0x0800:
+            return None
+            
+        # Parse IPv4 header
+        if len(data) < offset + 20: return None
+        ip_header = data[offset:offset+20]
+        ihl = (ip_header[0] & 0x0f) * 4
+        protocol = ip_header[9]
+        
+        src_ip = f"{ip_header[12]}.{ip_header[13]}.{ip_header[14]}.{ip_header[15]}"
+        dst_ip = f"{ip_header[16]}.{ip_header[17]}.{ip_header[18]}.{ip_header[19]}"
+        
+        offset += ihl
+        src_port, dst_port, proto_name = 0, 0, "IP"
+        
+        if protocol == 6: # TCP
+            proto_name = "TCP"
+            if len(data) >= offset + 4:
+                src_port = (data[offset] << 8) + data[offset+1]
+                dst_port = (data[offset+2] << 8) + data[offset+3]
+        elif protocol == 17: # UDP
+            proto_name = "UDP"
+            if len(data) >= offset + 4:
+                src_port = (data[offset] << 8) + data[offset+1]
+                dst_port = (data[offset+2] << 8) + data[offset+3]
+        elif protocol == 1: # ICMP
+            proto_name = "ICMP"
+            
+        return src_ip, dst_ip, src_port, dst_port, proto_name
+    except Exception:
+        return None
 
 def udp_collector_loop():
     UDP_IP = "0.0.0.0"
@@ -68,8 +128,17 @@ def udp_collector_loop():
             timestamp = time.time()
             size = len(data)
             
+            # Default to outer encapsulation values
             src_ip = addr[0]
-            dst_ip = "Collector ILB" 
+            dst_ip = "Collector ILB"
+            src_port = addr[1]
+            dst_port = UDP_PORT
+            protocol = 'GENEVE'
+            
+            # Attempt to decapsulate Geneve to find inner packets
+            inner_packet = decode_geneve(data)
+            if inner_packet:
+                src_ip, dst_ip, src_port, dst_port, protocol = inner_packet
             
             pattern_match = analyze_payload(data)
             
@@ -78,52 +147,13 @@ def udp_collector_loop():
             c.execute('''
                 INSERT INTO packets (timestamp, src_ip, dst_ip, src_port, dst_port, protocol, size, pattern_match, payload)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (timestamp, src_ip, dst_ip, addr[1], UDP_PORT, 'GENEVE', size, pattern_match, payload))
+            ''', (timestamp, src_ip, dst_ip, src_port, dst_port, protocol, size, pattern_match, payload))
             conn.commit()
         except Exception as e:
             print(f"Collector error: {e}")
             time.sleep(1)
 
-def mock_data_generator():
-    """Generates mock data so the application is lively without real traffic"""
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    protocols = ['TCP', 'UDP', 'ICMP', 'HTTP', 'HTTPS', 'DNS', 'GENEVE']
-    ips = [f"10.0.0.{i}" for i in range(10, 30)] + [f"192.168.1.{i}" for i in range(100, 110)] + ["34.120.55.12", "130.211.0.1"]
-    
-    patterns = ["None", "None", "None", "None", "None", "SQL Injection", "Cross-Site Scripting (XSS)", "Cleartext Password"]
 
-    while True:
-        timestamp = time.time()
-        pattern = random.choice(patterns)
-        
-        mock_payloads = {
-            "None": "GET / HTTP/1.1\\r\\nHost: example.com\\r\\nAccept: */*\\r\\n\\r\\n",
-            "SQL Injection": "GET /search?q=UNION%20SELECT%20username,%20password%20FROM%20users HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n",
-            "Cross-Site Scripting (XSS)": "POST /comment HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\nbody=<script>alert(1)</script>",
-            "Cleartext Password": "POST /login HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\nusername=admin&password=supersecretpassword",
-            "Suspicious Privilege Use": "GET /admin_dashboard?user=root:x:0:0:root HTTP/1.1\\r\\nHost: example.com\\r\\n\\r\\n"
-        }
-        
-        payload_text = mock_payloads.get(pattern, "00112233445566778899AABBCCDDEEFF")
-        hex_payload = payload_text.encode('utf-8').hex()
-        
-        c.execute('''
-            INSERT INTO packets (timestamp, src_ip, dst_ip, src_port, dst_port, protocol, size, pattern_match, payload)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            timestamp, 
-            random.choice(ips), 
-            random.choice(ips), 
-            random.randint(1024, 65535), 
-            random.choice([80, 443, 53, 22, 6081]), 
-            random.choice(protocols), 
-            len(payload_text) + random.randint(40, 500),
-            pattern,
-            hex_payload
-        ))
-        conn.commit()
-        time.sleep(random.uniform(0.05, 0.5))
 
 @app.route('/api/packets')
 def get_packets():
@@ -180,8 +210,5 @@ if __name__ == '__main__':
     
     t = threading.Thread(target=udp_collector_loop, daemon=True)
     t.start()
-    
-    t2 = threading.Thread(target=mock_data_generator, daemon=True)
-    t2.start()
     
     app.run(host='0.0.0.0', port=5000)

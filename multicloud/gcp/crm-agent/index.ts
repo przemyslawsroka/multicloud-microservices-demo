@@ -39,6 +39,12 @@ export const crmDatabaseQueryTool = new FunctionTool({
       return JSON.stringify(result.content);
     } catch (e: any) {
       return `[MCP Client Error] ${e.message}`;
+    } finally {
+      try {
+        await transport.close();
+      } catch (e) {
+        console.error("Failed to close transport", e);
+      }
     }
   }
 });

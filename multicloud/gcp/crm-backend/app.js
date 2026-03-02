@@ -161,13 +161,15 @@ app.post('/customers', async (req, res) => {
 });
 
 app.put('/customers/:id', async (req, res) => {
-  const { name, surname } = req.body;
+  const { name, surname, email, address } = req.body;
   try {
     const customer = await Customer.findByPk(req.params.id);
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
 
-    if (name) customer.name = name;
-    if (surname) customer.surname = surname;
+    if (name !== undefined) customer.name = name;
+    if (surname !== undefined) customer.surname = surname;
+    if (email !== undefined) customer.email = email;
+    if (address !== undefined) customer.address = address;
     await customer.save();
 
     res.status(200).json(customer);

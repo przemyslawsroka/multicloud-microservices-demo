@@ -53,7 +53,7 @@ const crmWorkerAgent = new LlmAgent({
     model: 'gemini-3-flash-preview',
     vertexai: true,
     project: process.env.GOOGLE_CLOUD_PROJECT || 'gcp-ecommerce-demo',
-    location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+    location: 'us-central1'
   }),
   tools: [crmDatabaseQueryTool],
   instruction: `
@@ -75,7 +75,7 @@ export const conciergeAgent = new LlmAgent({
     model: 'gemini-3-flash-preview',
     vertexai: true,
     project: process.env.GOOGLE_CLOUD_PROJECT || 'gcp-ecommerce-demo',
-    location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+    location: 'us-central1'
   }),
   subAgents: [crmWorkerAgent],
   // tools: [crmWorkerAgent.asTool()], // In ADK 0.2+, subAgents property handles A2A delegation magically, but asTool() is explicitly clear.

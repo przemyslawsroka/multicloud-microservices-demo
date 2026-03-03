@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/profiler"
@@ -276,10 +277,30 @@ func (cs *checkoutService) Watch(req *healthpb.HealthCheckRequest, ws healthpb.H
 }
 
 func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (*pb.PlaceOrderResponse, error) {
+	userIdParts := strings.SplitN(req.UserId, "~~", 3)
+	name := "Customer"
+	surname := "User"
+	realUserId := req.UserId
+
+	if len(userIdParts) == 3 {
+		name = userIdParts[0]
+		surname = userIdParts[1]
+		realUserId = userIdParts[2]
+	} else {
+		if len(req.Email) > 0 {
+			name = req.Email
+		}
+		if req.Address != nil && req.Address.StreetAddress != "" {
+			surname = "Customer"
+		}
+	}
+	
+	req.UserId = realUserId
+
 	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
 
 	// Evaluate KYC before processing the order
-	if err := cs.checkKyc(ctx, req.Email, "Customer"); err != nil {
+	if err := cs.checkKyc(ctx, req.Email, name); err != nil {
 		log.Warnf("KYC check failed for %s: %v", req.Email, err)
 		return nil, status.Errorf(codes.PermissionDenied, "KYC validation failed: %v", err)
 	}
@@ -352,7 +373,7 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	totalFloat := float32(total.Units) + float32(total.Nanos)/1e9
 			
 	// Manage customer in CRM
-	if err := cs.manageCustomer(ctx, req.Email, req.Address, orderResult, totalFloat, req.UserCurrency); err != nil {
+	if err := cs.manageCustomer(ctx, req.Email, req.Address, orderResult, totalFloat, req.UserCurrency, name, surname); err != nil {
 		log.Warnf("Failed to update CRM: %v", err)
 		// Don't fail the order, just log
 	}
@@ -532,21 +553,12 @@ func (cs *checkoutService) recordMetrics(ctx context.Context, duration time.Dura
 }
 
 // manageCustomer calls GCP CRM Service
-func (cs *checkoutService) manageCustomer(ctx context.Context, email string, address *pb.Address, order *pb.OrderResult, totalFloat float32, currency string) error {
+func (cs *checkoutService) manageCustomer(ctx context.Context, email string, address *pb.Address, order *pb.OrderResult, totalFloat float32, currency string, name string, surname string) error {
 	if cs.gcpCrmURL == "" {
 		log.Debug("GCP CRM URL not configured, skipping")
 		return nil
 	}
 
-	// Extract name from email or use address info
-	name := "Customer"
-	if len(email) > 0 {
-		name = email
-	}
-	surname := "User"
-	if address != nil && address.StreetAddress != "" {
-		surname = "Customer"
-	}
 	
 	addressString := ""
 	if address != nil {

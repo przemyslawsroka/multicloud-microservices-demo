@@ -72,14 +72,13 @@ spec:
           - name: AZURE_ANALYTICS_URL
             value: "http://10.2.1.5:8080"
           - name: GCP_CRM_URL
-            value: "http://10.3.0.2:8080"
+            value: "http://10.3.0.20:8080"
           - name: GCP_INVENTORY_URL
             value: "http://10.132.0.3:8080"
-
           - name: GCP_WAREHOUSE_URL
-            value: "https://warehouse-api-service-m45igafiqq-ew.a.run.app"
+            value: "https://warehouse-api-service-ubqk6o27bq-ew.a.run.app"
           - name: GCP_ACCOUNTING_URL
-            value: "https://accounting-api-service-m45igafiqq-uc.a.run.app"
+            value: "https://accounting-api-service-ubqk6o27bq-uc.a.run.app"
           resources:
             requests:
               cpu: 100m

@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: crm-service-entry
+  namespace: default
+spec:
+  hosts:
+  - "crm.internal"
+  addresses:
+  - 10.3.0.10/32
+  - 10.3.0.20/32
+  ports:
+  - number: 8080
+    name: http
+    protocol: HTTP
+  location: MESH_EXTERNAL
+  resolution: STATIC

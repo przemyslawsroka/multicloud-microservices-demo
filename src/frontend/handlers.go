@@ -324,6 +324,8 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	var (
 		email         = r.FormValue("email")
 		streetAddress = r.FormValue("street_address")
+		firstName     = r.FormValue("first_name")
+		lastName      = r.FormValue("last_name")
 		zipCode, _    = strconv.ParseInt(r.FormValue("zip_code"), 10, 32)
 		city          = r.FormValue("city")
 		state         = r.FormValue("state")
@@ -359,7 +361,7 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 				CreditCardExpirationMonth: int32(payload.CcMonth),
 				CreditCardExpirationYear:  int32(payload.CcYear),
 				CreditCardCvv:             int32(payload.CcCVV)},
-			UserId:       sessionID(r),
+			UserId:       fmt.Sprintf("%s~~%s~~%s", firstName, lastName, sessionID(r)),
 			UserCurrency: currentCurrency(r),
 			Address: &pb.Address{
 				StreetAddress: payload.StreetAddress,

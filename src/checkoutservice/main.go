@@ -389,13 +389,40 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	}
 
 	if cs.pubsubClient != nil && cs.pubsubTopic != "" {
+		items := make([]map[string]interface{}, len(prep.orderItems))
+		for i, item := range prep.orderItems {
+			items[i] = map[string]interface{}{
+				"item": map[string]interface{}{
+					"product_id": item.Item.ProductId,
+					"quantity":   item.Item.Quantity,
+				},
+				"cost": map[string]interface{}{
+					"currency_code": item.Cost.CurrencyCode,
+					"units":         item.Cost.Units,
+					"nanos":         item.Cost.Nanos,
+				},
+			}
+		}
+
 		event := map[string]interface{}{
-			"orderId":       orderID.String(),
-			"customerEmail": req.Email,
-			"totalAmount":   totalFloat,
-			"currency":      req.UserCurrency,
-			"timestamp":     time.Now().UTC().Format(time.RFC3339),
-			"items":         prep.orderItems, // Include full item array to match struct definition if needed
+			"order_id":             orderID.String(),
+			"user_id":              req.UserId,
+			"email":                req.Email,
+			"user_currency":        req.UserCurrency,
+			"shipping_tracking_id": shippingTrackingID,
+			"shipping_cost": map[string]interface{}{
+				"currency_code": prep.shippingCostLocalized.CurrencyCode,
+				"units":         prep.shippingCostLocalized.Units,
+				"nanos":         prep.shippingCostLocalized.Nanos,
+			},
+			"shipping_address": map[string]interface{}{
+				"street_address": req.Address.StreetAddress,
+				"city":           req.Address.City,
+				"state":          req.Address.State,
+				"country":        req.Address.Country,
+				"zip_code":       req.Address.ZipCode,
+			},
+			"items": items,
 		}
 		data, err := json.Marshal(event)
 		if err != nil {

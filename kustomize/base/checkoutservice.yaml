@@ -79,6 +79,12 @@ spec:
             value: "https://warehouse-api-service-ubqk6o27bq-ew.a.run.app"
           - name: GCP_ACCOUNTING_URL
             value: "https://accounting-api-service-ubqk6o27bq-uc.a.run.app"
+          - name: GCP_KYC_URL
+            value: "http://10.6.0.20:8080"
+          - name: GCP_PROJECT_ID
+            value: "gcp-ecommerce-demo"
+          - name: PUBSUB_TOPIC
+            value: "order-events"
           resources:
             requests:
               cpu: 100m

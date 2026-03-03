@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: kyc-service-entry
+  namespace: default
+spec:
+  hosts:
+  - "kyc.internal"
+  addresses:
+  - 10.6.0.20/32
+  ports:
+  - number: 8080
+    name: http
+    protocol: HTTP
+  location: MESH_EXTERNAL
+  resolution: STATIC

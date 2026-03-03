@@ -79,4 +79,5 @@ nav:
     - Internal Load Balancer (ILB): patterns/ilb.md
     - Multi-Cloud Connectivity: patterns/cross_cloud.md
     - Out-of-Band Packet Mirroring: patterns/packet_mirroring.md
+  - DNS & SSL Configuration: dns_ssl.md
   - Infrastructure & Deployment: infrastructure.md

@@ -68,9 +68,23 @@ Serverless Cloud Run environments inherently boot inside isolated Google-managed
 
 ---
 
-## 4. Google API Inter-Tunnels
+## 4. Network Security & Observability
 
-### 4.1 Private Google Access (PGA)
+To actively catalog vulnerabilities and expose multi-cloud attack vectors propagating internally (e.g., SQLi, XSS) without penalizing legitimate traffic latency natively, the architecture utilizes non-blocking security layers.
+
+### 4.1 Out-of-Band (OOB) Packet Mirroring
+**Scenario:** `online-boutique-vpc` Traffic → `Traffic Collector VM` (Deep Packet Engine)
+
+*   **The Design**: Native GCP Network Security APIs and traditional Packet Mirroring architectures actively intercept specific network routing patterns structurally. As data traverses the online boutique network natively, an exact replica byte stream copies asynchronously.
+*   **Geneve Encapsulation**: A mirrored payload must navigate complex regional GCP routing tables systematically to arrive at a monitoring endpoint. To preserve original outer-layer metrics (e.g., the true Source IP), GCP wraps the packet seamlessly leveraging **Generic Network Virtualization Encapsulation (Geneve)** terminating specifically over `UDP 6081` onto specialized Internal Load Balancers explicitly mapped in regions like `us-central1`.
+*   **Deep Packet Inspection (DPI)**: The destination Python `collector.py` engine unwraps the outer UDP shell instantly parsing inner metrics.
+*   [Review Packet Mirroring Documentation](https://cloud.google.com/vpc/docs/packet-mirroring)
+
+---
+
+## 5. Google API Inter-Tunnels
+
+### 5.1 Private Google Access (PGA)
 **Scenario:** `Cloud Run Node` → `Cloud Pub/Sub API`
 
 Secure nodes executing exclusively within closed VPC topologies actively prevent routing directly crossing egress NAT appliances onto public IP registries entirely.

@@ -17,6 +17,8 @@ By exploring this architecture, you will learn how to:
 - **Implement Multi-Cloud Integrations**: Route secure communication across cloud boundaries (GCP to Azure) utilizing Dedicated Interconnects or HA VPNs coupled with BGP dynamic routing.
 - **Govern B2B External Access**: Use Apigee API Management to protect internal workloads from third-party partners operating over the public internet.
 - **Enable Event-Driven Operations**: Utilize Google Cloud Pub/Sub and BigQuery for asynchronous process decoupling and data analytics respectively.
+- **Integrate AI & Intelligence**: Build conversational agent workflows utilizing Vertex AI and the Google Agent Development Kit (ADK).
+- **Network Observability & Security**: Deploy Out-of-Band (OOB) Packet Mirroring for real-time Deep Packet Inspection (DPI) detecting malicious payloads transparently without impacting latency.
 
 ---
 

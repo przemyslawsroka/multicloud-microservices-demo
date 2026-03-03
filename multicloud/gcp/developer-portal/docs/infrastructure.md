@@ -13,8 +13,9 @@ To ensure strict network boundaries and to study high-latency structural conditi
 ### Google Cloud Regions
 
 *   **`us-central1` (Iowa)**: The Core Compute Zone.
-    *   Houses the primary GKE Autopilot cluster (`online-boutique-cluster`), executing the entire synchronous storefront checkout process actively.
-    *   Hosts the Vertex AI Agent Engine (`crm-concierge`), utilizing the `gemini-1.5-pro` model alongside the Google Agent Development Kit (ADK) parameters.
+    *   Houses the primary GKE cluster (`online-boutique-cluster`), executing the entire synchronous storefront checkout process actively.
+    *   Hosts the Vertex AI Agent Engine (`crm-concierge`), utilizing the Google Agent Development Kit (ADK) parameters.
+    *   Deploys the out-of-band Traffic Collector engines. Distributed actively via Internal Load Balancing arrays (`oob-collector-ilb`, `oob-collector-ilb-a`, `oob-collector-ilb-b`, `oob-collector-ilb-c`) collecting regional traffic intercepting flows across Availability Zones concurrently.
     *   Executes the serverless Accounting Service (Cloud Run), bound by localized Serverless VPC Access Connectors routing financial data natively.
     *   Manages the specialized Furniture Service legacy VMs, communicating across strict HA Cloud VPN boundaries specifically for localized freight tracking.
 
@@ -49,6 +50,7 @@ Deploying a multi-region, multi-cloud environment completely securely necessitat
 *   **`inventory.tf`**: Creates the `inventory-vpc`, establishes isolated VMs, blocks generic public internet connections proactively, and compiles the complex Private Service Connect (PSC) Endpoint structures defining external visibility precisely.
 *   **`crm.tf`**: Explicitly maps the regional Compute Engine Managed Instance Groups (MIG) arrays natively behind rigid internal routing bounds mapped explicitly to localized Internal TCP Load Balancing environments.
 *   **`accounting.tf` & `warehouse.tf`**: Generates exact serverless deployment arrays for standard Docker nodes defining internal connectivity natively bridging direct localized VPC mappings specifically enabling dynamic Direct Egress configurations internally.
+*   **`out_of_band.tf` / `legacy_pm.tf`**: Orchestrates deep packet inspection arrays utilizing GCP Network Security APIs and traditional Packet Mirroring architectures concurrently. Generates regional Mirroring Deployments explicitly parsing raw Geneve (UDP 6081) encapsulated packets.
 
 ---
 

@@ -25,6 +25,12 @@ Pub/Sub performs horizontal scale-out payload distribution, routing immutable ev
 2. **Accounting Ledger Sync**: OrderManagement executes a subsequent synchronous `POST /transactions` specifically into the Accounting Service. Natively, the Accounting Service sequentially conducts a retroactive `GET` request specifically against the original CRM Service logic to map transaction identities firmly to loyalty databases.
 3. **Warehouse Dispatching**: The OrderManagement tier posts instructions utilizing `POST /shipments` directly to the Warehouse APIs. The Warehouse service logically triggers physical packing routines and initiates a final stock reconciliation backward mapping to the core Inventory Service utilizing a rigid `PUT /inventory/{productId}` structural edit.
 
+### Phase 4: Conversational Workflow (CRM Concierge)
+Users interacting with the storefront can seamlessly engage an AI agent built on Vertex AI and the Google Agent Development Kit (ADK). By acting autonomously, the `crm-agent` issues explicit Model Context Protocol (MCP) tool requests mapped to the CRM REST API (e.g., executing backend lookups or parsing history metadata dynamically), empowering a deeply conversational, context-aware user support layer natively.
+
+### Phase 5: Deep Packet Inspection (DPI) Modeling
+During all phases of traffic routing, a physical copy of the native network packets is explicitly intercepted via GCP Packet Mirroring. The packets are encapsulated directly via the Geneve protocol and streamed toward a cluster of Deep Packet Inspection (Traffic Collector) engines. Operating on Python, the collector immediately decapsulates the UDP 6081 framing to parse the actual inner IP and TCP headers, checking for string-based vulnerabilities natively (e.g. SQLi, XSS) displaying instantaneous analytical records on its dedicated monitoring dashboard.
+
 ---
 
 ## 2. API & Component Registry
@@ -45,3 +51,4 @@ The table below catalogs the deployment profiles, core structural protocols, and
 | **Accounting**| GCP Cloud Run | Node.js (Express) | `GET`, `POST`, `PUT` | Persistent (Local Memory / Disk) |
 | **Fraud Engine**| Azure Virtual Machine| Node.js (Express) | `POST /metrics`, `GET` | Transitory Memory Cache |
 | **Data Warehouse**| GCP BigQuery | Managed PaaS | Direct Streaming | Columnar Disk |
+| **Traffic Collector**| GCP Compute VM | Python (Flask / Raw Socket) | `UDP 6081` (Geneve) | Volatile SQLite (DPI) |

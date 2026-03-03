@@ -37,6 +37,11 @@ flowchart TD
         Fraud[Fraud/Analytics Engine]
     end
     
+    subgraph Observability & AI
+        CRMAgent[CRM Agent / Concierge (Vertex AI)]
+        TrafficCollector[OOB Traffic Collector (DPI)]
+    end
+    
     Checkout --> Inventory
     Checkout --> CRM
     Checkout --> Fraud
@@ -44,6 +49,8 @@ flowchart TD
     OrderMgmt --> Warehouse
     OrderMgmt --> Accounting
     PartnerAPI --> Warehouse
+    Customer -.-> CRMAgent
+    Checkout -.-> TrafficCollector
 ```
 
 <br/>
@@ -70,3 +77,9 @@ flowchart TD
 
 ### 2.5 Multi-Cloud Services
 *   **Fraud Detection / Analytics Engine**: An external service (hosted natively on Microsoft Azure) that evaluates incoming HTTP transaction metadata against heuristic engines to generate a boolean risk score instantly, actively attempting to decline suspicious payloads before they affect physical fulfillment.
+
+### 2.6 AI & Intelligence
+*   **CRM Agent (Concierge)**: An autonomous AI assistant built on the Google Agent Development Kit (ADK) leveraging Vertex AI. It interfaces with the CRM Service directly, enabling natural language customer support interactions and intelligent data retrieval natively.
+
+### 2.7 Observability & Security
+*   **Out-of-Band (OOB) Traffic Collector**: A dedicated Python-based Deep Packet Inspection (DPI) engine that ingests mirrored network traffic. By decapsulating Geneve (UDP 6081) packet tunnels in real-time, it autonomously identifies malicious payloads (like SQLi or XSS) propagating internally across the multi-cloud topology without impacting the synchronous path.

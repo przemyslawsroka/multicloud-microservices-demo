@@ -4,7 +4,7 @@ set -e
 echo "Deploying MkDocs Material Portal to Cloud Run..."
 PROJECT_ID=$(gcloud config get-value project)
 REGION="europe-west1"
-REPO="boutique-repo"
+REPO="warehouse-repo"
 IMAGE_URL="europe-west1-docker.pkg.dev/$PROJECT_ID/$REPO/developer-portal:latest"
 
 echo "Building Docker Image locally..."

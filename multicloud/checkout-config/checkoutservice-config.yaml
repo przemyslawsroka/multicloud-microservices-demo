@@ -8,6 +8,7 @@ data:
   GCP_CRM_URL: "http://crm.internal.boutique.local:8080"              # CRM backend VM via DNS
   GCP_INVENTORY_URL: "http://inventory.internal.boutique.local:8080"      # Inventory service via DNS
   GCP_ACCOUNTING_URL: "http://accounting.internal.boutique.local:8080"        # Accounting service via DNS
+  GCP_KYC_URL: "http://10.6.0.20:8080"              # KYC Service via HA VPN
   PUBSUB_TOPIC: "order-events"                     # Pub/Sub topic for OrderConfirmedEvent
   GCP_PROJECT_ID: "YOUR_GCP_PROJECT_ID"               # Replace with your GCP Project ID
 ---

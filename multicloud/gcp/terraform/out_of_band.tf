@@ -10,7 +10,7 @@ resource "google_compute_subnetwork" "oob_subnet_us" {
 }
 
 resource "google_compute_region_backend_service" "oob_collector_backend" {
-  project = var.project_id
+  project               = var.project_id
   provider              = google-beta
   name                  = "oob-collector-backend"
   region                = "us-central1"
@@ -25,7 +25,7 @@ resource "google_compute_region_backend_service" "oob_collector_backend" {
 }
 
 resource "google_compute_health_check" "oob_collector_hc" {
-  project = var.project_id
+  project  = var.project_id
   provider = google-beta
   name     = "oob-collector-hc"
   tcp_health_check {
@@ -34,22 +34,22 @@ resource "google_compute_health_check" "oob_collector_hc" {
 }
 
 resource "google_compute_forwarding_rule" "oob_collector_ilb" {
-  project = var.project_id
-  provider              = google-beta
-  name                  = "oob-collector-ilb"
-  region                = "us-central1"
-  load_balancing_scheme = "INTERNAL"
-  backend_service       = google_compute_region_backend_service.oob_collector_backend.id
-  all_ports             = true
-  network               = google_compute_network.crm_vpc.id
-  subnetwork            = google_compute_subnetwork.oob_subnet_us.id
-  ip_protocol           = "UDP"
-  is_mirroring_collector= true
+  project                = var.project_id
+  provider               = google-beta
+  name                   = "oob-collector-ilb"
+  region                 = "us-central1"
+  load_balancing_scheme  = "INTERNAL"
+  backend_service        = google_compute_region_backend_service.oob_collector_backend.id
+  all_ports              = true
+  network                = google_compute_network.crm_vpc.id
+  subnetwork             = google_compute_subnetwork.oob_subnet_us.id
+  ip_protocol            = "UDP"
+  is_mirroring_collector = true
 }
 
 # 2. Mirroring Deployment Group
 resource "google_network_security_mirroring_deployment_group" "oob_mdg" {
-  project = var.project_id
+  project                       = var.project_id
   provider                      = google-beta
   mirroring_deployment_group_id = "crm-mdg"
   location                      = "global"
@@ -58,7 +58,7 @@ resource "google_network_security_mirroring_deployment_group" "oob_mdg" {
 
 # 3. Mirroring Deployment
 resource "google_network_security_mirroring_deployment" "oob_md" {
-  project = var.project_id
+  project                    = var.project_id
   provider                   = google-beta
   mirroring_deployment_id    = "crm-md"
   location                   = "us-central1-f"
@@ -68,7 +68,7 @@ resource "google_network_security_mirroring_deployment" "oob_md" {
 
 # 4. Mirroring Endpoint Group
 resource "google_network_security_mirroring_endpoint_group" "oob_meg" {
-  project = var.project_id
+  project                     = var.project_id
   provider                    = google-beta
   mirroring_endpoint_group_id = "crm-meg"
   location                    = "global"
@@ -77,7 +77,7 @@ resource "google_network_security_mirroring_endpoint_group" "oob_meg" {
 
 # 5. Mirroring Endpoint Group Association
 resource "google_network_security_mirroring_endpoint_group_association" "oob_mega" {
-  project = var.project_id
+  project                                 = var.project_id
   provider                                = google-beta
   mirroring_endpoint_group_association_id = "crm-mega"
   location                                = "global"
@@ -128,10 +128,10 @@ resource "google_compute_instance" "oob_collector_vm" {
 }
 
 resource "google_compute_instance_group" "oob_collector_ig" {
-  project     = var.project_id
-  name        = "oob-collector-ig"
-  zone        = "us-central1-a"
-  instances   = [google_compute_instance.oob_collector_vm.self_link]
+  project   = var.project_id
+  name      = "oob-collector-ig"
+  zone      = "us-central1-a"
+  instances = [google_compute_instance.oob_collector_vm.self_link]
 }
 
 # Add a firewall rule to allow OOB LB and Health checks to reach the VM
@@ -156,7 +156,7 @@ output "traffic_collector_dashboard" {
 }
 
 resource "google_network_security_mirroring_deployment" "oob_md_a" {
-  project = var.project_id
+  project                    = var.project_id
   provider                   = google-beta
   mirroring_deployment_id    = "crm-md-a"
   location                   = "us-central1-a"
@@ -165,7 +165,7 @@ resource "google_network_security_mirroring_deployment" "oob_md_a" {
 }
 
 resource "google_network_security_mirroring_deployment" "oob_md_c" {
-  project = var.project_id
+  project                    = var.project_id
   provider                   = google-beta
   mirroring_deployment_id    = "crm-md-c"
   location                   = "us-central1-c"
@@ -174,49 +174,49 @@ resource "google_network_security_mirroring_deployment" "oob_md_c" {
 }
 
 resource "google_compute_forwarding_rule" "oob_collector_ilb_a" {
-  project = var.project_id
-  provider              = google-beta
-  name                  = "oob-collector-ilb-a"
-  region                = "us-central1"
-  load_balancing_scheme = "INTERNAL"
-  backend_service       = google_compute_region_backend_service.oob_collector_backend.id
-  all_ports             = true
-  network               = google_compute_network.crm_vpc.id
-  subnetwork            = google_compute_subnetwork.oob_subnet_us.id
-  ip_protocol           = "UDP"
-  is_mirroring_collector= true
+  project                = var.project_id
+  provider               = google-beta
+  name                   = "oob-collector-ilb-a"
+  region                 = "us-central1"
+  load_balancing_scheme  = "INTERNAL"
+  backend_service        = google_compute_region_backend_service.oob_collector_backend.id
+  all_ports              = true
+  network                = google_compute_network.crm_vpc.id
+  subnetwork             = google_compute_subnetwork.oob_subnet_us.id
+  ip_protocol            = "UDP"
+  is_mirroring_collector = true
 }
 
 resource "google_compute_forwarding_rule" "oob_collector_ilb_b" {
-  project = var.project_id
-  provider              = google-beta
-  name                  = "oob-collector-ilb-b"
-  region                = "us-central1"
-  load_balancing_scheme = "INTERNAL"
-  backend_service       = google_compute_region_backend_service.oob_collector_backend.id
-  all_ports             = true
-  network               = google_compute_network.crm_vpc.id
-  subnetwork            = google_compute_subnetwork.oob_subnet_us.id
-  ip_protocol           = "UDP"
-  is_mirroring_collector= true
+  project                = var.project_id
+  provider               = google-beta
+  name                   = "oob-collector-ilb-b"
+  region                 = "us-central1"
+  load_balancing_scheme  = "INTERNAL"
+  backend_service        = google_compute_region_backend_service.oob_collector_backend.id
+  all_ports              = true
+  network                = google_compute_network.crm_vpc.id
+  subnetwork             = google_compute_subnetwork.oob_subnet_us.id
+  ip_protocol            = "UDP"
+  is_mirroring_collector = true
 }
 
 resource "google_compute_forwarding_rule" "oob_collector_ilb_c" {
-  project = var.project_id
-  provider              = google-beta
-  name                  = "oob-collector-ilb-c"
-  region                = "us-central1"
-  load_balancing_scheme = "INTERNAL"
-  backend_service       = google_compute_region_backend_service.oob_collector_backend.id
-  all_ports             = true
-  network               = google_compute_network.crm_vpc.id
-  subnetwork            = google_compute_subnetwork.oob_subnet_us.id
-  ip_protocol           = "UDP"
-  is_mirroring_collector= true
+  project                = var.project_id
+  provider               = google-beta
+  name                   = "oob-collector-ilb-c"
+  region                 = "us-central1"
+  load_balancing_scheme  = "INTERNAL"
+  backend_service        = google_compute_region_backend_service.oob_collector_backend.id
+  all_ports              = true
+  network                = google_compute_network.crm_vpc.id
+  subnetwork             = google_compute_subnetwork.oob_subnet_us.id
+  ip_protocol            = "UDP"
+  is_mirroring_collector = true
 }
 
 resource "google_network_security_mirroring_deployment" "oob_md_b" {
-  project = var.project_id
+  project                    = var.project_id
   provider                   = google-beta
   mirroring_deployment_id    = "crm-md-b"
   location                   = "us-central1-b"

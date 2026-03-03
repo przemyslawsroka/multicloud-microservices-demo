@@ -119,7 +119,7 @@ resource "google_dns_record_set" "boutique_apex_record" {
   ttl          = 300
   managed_zone = data.google_dns_managed_zone.public_zone.name
   # Uses the Reserved Global IP allocated above for GKE Ingress
-  rrdatas      = [google_compute_global_address.boutique_frontend_ip.address]
+  rrdatas = [google_compute_global_address.boutique_frontend_ip.address]
 }
 
 # Record Set: Online Boutique (WWW)
@@ -138,5 +138,5 @@ resource "google_dns_record_set" "docs_public_record" {
   ttl          = 300
   managed_zone = data.google_dns_managed_zone.public_zone.name
   # Documentation portal domain mapping is targeted to Cloud Run
-  rrdatas      = ["ghs.googlehosted.com."]
+  rrdatas = ["ghs.googlehosted.com."]
 }

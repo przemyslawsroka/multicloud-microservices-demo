@@ -67,9 +67,9 @@ resource "google_compute_firewall" "allow_connector_to_crm" {
 
 # Define the Cloud Run service
 resource "google_cloud_run_v2_service" "accounting_api_service" {
-  name     = "accounting-api-service"
-  location = "us-central1"
-  project  = var.project_id
+  name                = "accounting-api-service"
+  location            = "us-central1"
+  project             = var.project_id
   deletion_protection = false
 
   template {

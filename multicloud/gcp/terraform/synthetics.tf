@@ -16,10 +16,10 @@ resource "google_project_service" "synthetics_apis" {
 
 # Create a Cloud Storage Bucket to hold the source code zip files
 resource "google_storage_bucket" "synthetics_source_bucket" {
-  name          = "${var.project_id}-synthetics-src"
-  location      = "US"
-  project       = var.project_id
-  force_destroy = true
+  name                        = "${var.project_id}-synthetics-src"
+  location                    = "US"
+  project                     = var.project_id
+  force_destroy               = true
   uniform_bucket_level_access = true
 }
 
@@ -56,9 +56,9 @@ resource "google_storage_bucket_object" "frontend_journey_obj" {
 # -----------------------------------------------------------------------------------------
 
 resource "google_cloudfunctions2_function" "crm_synthetic_func" {
-  name        = "crm-api-synthetic"
-  location    = "us-central1"
-  project     = var.project_id
+  name     = "crm-api-synthetic"
+  location = "us-central1"
+  project  = var.project_id
 
   build_config {
     runtime     = "nodejs20"
@@ -79,7 +79,7 @@ resource "google_cloudfunctions2_function" "crm_synthetic_func" {
       CRM_URL       = "http://${google_compute_address.crm_backend_ilb_ip.address}:8080/health"
       INVENTORY_URL = "SKIP" # Ignored since we only test CRM dynamically here to avoid VPC boundaries
     }
-    vpc_connector = google_vpc_access_connector.accounting_connector.id
+    vpc_connector                 = google_vpc_access_connector.accounting_connector.id
     vpc_connector_egress_settings = "PRIVATE_RANGES_ONLY"
   }
   depends_on = [google_project_service.synthetics_apis]
@@ -122,9 +122,9 @@ resource "google_vpc_access_connector" "inventory_synthetic_connector" {
 }
 
 resource "google_cloudfunctions2_function" "inventory_synthetic_func" {
-  name        = "inventory-api-synthetic"
-  location    = "europe-west1"
-  project     = var.project_id
+  name     = "inventory-api-synthetic"
+  location = "europe-west1"
+  project  = var.project_id
 
   build_config {
     runtime     = "nodejs20"
@@ -145,7 +145,7 @@ resource "google_cloudfunctions2_function" "inventory_synthetic_func" {
       CRM_URL       = "SKIP" # Ignored
       INVENTORY_URL = "http://${google_compute_forwarding_rule.inventory_forwarding_rule.ip_address}:8080/health"
     }
-    vpc_connector = google_vpc_access_connector.inventory_synthetic_connector.id
+    vpc_connector                 = google_vpc_access_connector.inventory_synthetic_connector.id
     vpc_connector_egress_settings = "PRIVATE_RANGES_ONLY"
   }
   depends_on = [google_project_service.synthetics_apis]
@@ -169,9 +169,9 @@ resource "google_monitoring_uptime_check_config" "inventory_synthetic_check" {
 # -----------------------------------------------------------------------------------------
 
 resource "google_cloudfunctions2_function" "frontend_synthetic_func" {
-  name        = "frontend-journey-synthetic"
-  location    = "us-central1"
-  project     = var.project_id
+  name     = "frontend-journey-synthetic"
+  location = "us-central1"
+  project  = var.project_id
 
   build_config {
     runtime     = "nodejs20"
@@ -193,7 +193,7 @@ resource "google_cloudfunctions2_function" "frontend_synthetic_func" {
     timeout_seconds    = 120
     environment_variables = {
       PUPPETEER_CACHE_DIR = "/workspace/.cache/puppeteer"
-      TARGET_URL = "http://34.59.102.231" # Adjust dynamically if frontend yields an IP
+      TARGET_URL          = "http://34.59.102.231" # Adjust dynamically if frontend yields an IP
     }
   }
   depends_on = [google_project_service.synthetics_apis]

@@ -98,6 +98,7 @@ type checkoutService struct {
 	gcpInventoryURL     string
 	gcpAccountingURL    string
 	gcpWarehouseURL     string
+	gcpKycURL           string
 	// Pub/Sub configuration
 	gcpProjectID  string
 	pubsubTopic   string
@@ -152,11 +153,12 @@ func main() {
 	svc.gcpInventoryURL = os.Getenv("GCP_INVENTORY_URL")
 	svc.gcpAccountingURL = os.Getenv("GCP_ACCOUNTING_URL")
 	svc.gcpWarehouseURL = os.Getenv("GCP_WAREHOUSE_URL")
+	svc.gcpKycURL = os.Getenv("GCP_KYC_URL")
 	svc.gcpProjectID = os.Getenv("GCP_PROJECT_ID")
 	svc.pubsubTopic = os.Getenv("PUBSUB_TOPIC")
 	
-	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpAccounting=%q gcpWarehouse=%q",
-		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpAccountingURL, svc.gcpWarehouseURL)
+	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpAccounting=%q gcpWarehouse=%q gcpKyc=%q",
+		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpAccountingURL, svc.gcpWarehouseURL, svc.gcpKycURL)
 
 	if svc.gcpProjectID != "" {
 		client, err := pubsub.NewClient(ctx, svc.gcpProjectID)
@@ -275,6 +277,13 @@ func (cs *checkoutService) Watch(req *healthpb.HealthCheckRequest, ws healthpb.H
 
 func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (*pb.PlaceOrderResponse, error) {
 	log.Infof("[PlaceOrder] user_id=%q user_currency=%q", req.UserId, req.UserCurrency)
+
+	// Evaluate KYC before processing the order
+	if err := cs.checkKyc(ctx, req.Email, "Customer"); err != nil {
+		log.Warnf("KYC check failed for %s: %v", req.Email, err)
+		return nil, status.Errorf(codes.PermissionDenied, "KYC validation failed: %v", err)
+	}
+
 
 	startTime := time.Now()
 	var success bool
@@ -643,7 +652,45 @@ func (cs *checkoutService) manageWarehouse(ctx context.Context, orderID string, 
 	return cs.postJSON(ctx, cs.gcpWarehouseURL+"/shipments", warehouseData)
 }
 
+// checkKyc calls GCP KYC Service to validate the customer
+func (cs *checkoutService) checkKyc(ctx context.Context, email string, name string) error {
+	if cs.gcpKycURL == "" {
+		log.Debug("GCP KYC URL not configured, skipping check")
+		return nil
+	}
 
+	kycData := map[string]interface{}{
+		"email": email,
+		"name":  name,
+	}
+
+	jsonData, err := json.Marshal(kycData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal KYC data: %v", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", cs.gcpKycURL+"/check", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create KYC request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := cs.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send KYC request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&errResp)
+		msg, _ := errResp["message"].(string)
+		return fmt.Errorf("KYC rejected (status %d): %s", resp.StatusCode, msg)
+	}
+
+	log.Infof("KYC check passed for email=%s", email)
+	return nil
+}
 
 // Helper method to POST JSON
 func (cs *checkoutService) postJSON(ctx context.Context, url string, data map[string]interface{}) error {

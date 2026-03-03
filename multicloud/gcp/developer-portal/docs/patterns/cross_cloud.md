@@ -12,7 +12,7 @@ An HA Cloud VPN dynamically links the `online-boutique-vpc` inside Google Cloud 
 
 ```mermaid
 flowchart LR
-    subgraph Google Cloud (us-central1)
+    subgraph Google Cloud - us-central1
         Checkout[Checkout Service]
         CGW[Cloud VPN Gateway]
         CR[Cloud Router BGP]
@@ -22,7 +22,7 @@ flowchart LR
         Tunnel[Encrypted IPsec HA Tunnel]
     end
 
-    subgraph Microsoft Azure (West Europe)
+    subgraph Microsoft Azure - West Europe
         AZGW[Azure VPN Gateway]
         FraudVM[Fraud Analytics VM]
     end

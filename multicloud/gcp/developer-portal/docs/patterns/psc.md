@@ -12,12 +12,12 @@ The principal consumer network (`online-boutique-vpc`) generates a localized int
 
 ```mermaid
 flowchart LR
-    subgraph Consumer VPC (online-boutique-vpc)
+    subgraph Consumer VPC - online-boutique-vpc
         Checkout[Checkout Service]
         PSCEp[PSC Endpoint IP]
     end
     
-    subgraph Producer VPC (inventory-vpc)
+    subgraph Producer VPC - inventory-vpc
         PSCAttachment[PSC Service Attachment]
         ILB[Internal TCP LB]
         InventoryVMs[Inventory Service VMs]

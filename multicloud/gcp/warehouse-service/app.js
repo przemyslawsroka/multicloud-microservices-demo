@@ -1,4 +1,5 @@
 const express = require('express');
+const { BigQuery } = require('@google-cloud/bigquery');
 const app = express();
 const port = process.env.PORT || 8080;
 
@@ -154,29 +155,85 @@ app.delete('/warehouse/:id', (req, res) => {
   res.status(200).json({ message: 'Item deleted', item: deletedItem });
 });
 
-// POST endpoint for ordermanagement shipments
-app.post('/shipments', (req, res) => {
-  const { orderId, trackingId, items, destinationAddress } = req.body;
+// Initialize BigQuery Client
+const bigquery = new BigQuery();
+const BQ_DATASET = 'enterprise_data_lake';
+const BQ_TABLE = 'order_events';
 
-  if (!orderId || !items || !destinationAddress) {
-    console.log('POST /shipments - Failed: Missing logistics payload fields');
-    return res.status(400).json({ error: 'Order ID, items array, and destination Address are required' });
+// POST endpoint for ordermanagement shipments (Synchronous checkoutservice call)
+app.post('/shipments', async (req, res) => {
+  const { orderId, email, currency, trackingId, shippingCost, items, destinationAddress } = req.body;
+
+  if (!orderId || !items) {
+    console.log('POST /shipments - Failed: Missing orderId or items');
+    return res.status(400).json({ error: 'Order ID and items are required' });
   }
 
-  console.log(`POST /shipments - Creating shipment for Order ${orderId}`);
-  console.log(`Tracking ID: ${trackingId || 'N/A'}`);
-  console.log(`Items count: ${items.length}`);
+  console.log(`POST /shipments - Processing Order ${orderId}`);
 
-  // In a real application, we would insert into the local database and optionally trigger picking operations
+  try {
+    // Construct the exact BigQuery row
+    const row = {
+      order_id: orderId,
+      user_id: req.body.userId || null,
+      email: email || null,
+      user_currency: currency || null,
+      shipping_tracking_id: trackingId || null,
+      shipping_cost: shippingCost ? {
+        currency_code: shippingCost.currencyCode || shippingCost.currency_code || 'USD',
+        units: shippingCost.units || 0,
+        nanos: shippingCost.nanos || 0
+      } : null,
+      shipping_address: destinationAddress ? {
+        street_address: destinationAddress.streetAddress || destinationAddress.street_address || null,
+        city: destinationAddress.city || null,
+        state: destinationAddress.state || null,
+        country: destinationAddress.country || null,
+        zip_code: destinationAddress.zipCode || destinationAddress.zip_code || null
+      } : null,
+      items: items.map(i => ({
+        item: i.item ? {
+          product_id: i.item.productId || i.item.product_id,
+          quantity: i.item.quantity || 1
+        } : null,
+        cost: i.cost ? {
+          currency_code: i.cost.currencyCode || i.cost.currency_code || 'USD',
+          units: i.cost.units || 0,
+          nanos: i.cost.nanos || 0
+        } : null
+      }))
+    };
 
-  res.status(201).json({
-    message: 'Shipment scheduled successfully',
-    shipmentDetails: {
-      orderId,
-      trackingId,
-      status: 'pending_fulfillment'
+    console.log(`[Warehouse Event] Storing warehouse event in BigQuery (${BQ_TABLE})`);
+
+    // Insert into BigQuery
+    await bigquery.dataset(BQ_DATASET).table(BQ_TABLE).insert([row]);
+    console.log(`[Warehouse Event] Successfully inserted ${orderId} into BQ`);
+
+    res.status(201).json({
+      message: 'Shipment scheduled successfully',
+      shipmentDetails: {
+        orderId,
+        trackingId: trackingId || 'N/A',
+        status: 'pending_fulfillment'
+      }
+    });
+
+  } catch (err) {
+    console.error('[Warehouse Error] Failed to process shipment / insert to BQ:', err);
+    // Print BQ validation errors if they exist
+    if (err && err.name === 'PartialFailureError') {
+      err.errors.forEach(e => {
+        console.error('BigQuery insert error:', JSON.stringify(e));
+      });
     }
-  });
+
+    // Still return 201 so checkoutservice order doesn't fail due to analytics logging failure
+    res.status(201).json({
+      message: 'Shipment accepted but analytics logging failed',
+      error: err.message
+    });
+  }
 });
 
 if (require.main === module) {

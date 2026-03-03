@@ -30,12 +30,10 @@ env:
   value: "http://<YOUR_GCP_IP>:8080"
 - name: GCP_INVENTORY_URL
   value: "http://<YOUR_GCP_PSC_IP>:8080"
-- name: GCP_FURNITURE_URL
-  value: "http://<YOUR_GCP_FURNITURE_IP>:8080"
+- name: GCP_ACCOUNTING_URL
+  value: "http://<YOUR_GCP_ACCOUNTING_IP>:8080"
 - name: GCP_WAREHOUSE_URL
   value: "https://<YOUR_GCP_WAREHOUSE_URL>"
-- name: GCP_ACCOUNTING_URL
-  value: "https://<YOUR_GCP_ACCOUNTING_URL>"
 ```
 
 ## Verifying Integration

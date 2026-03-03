@@ -96,7 +96,8 @@ type checkoutService struct {
 	azureAnalyticsURL   string
 	gcpCrmURL           string
 	gcpInventoryURL     string
-	gcpFurnitureURL     string
+	gcpAccountingURL    string
+	gcpWarehouseURL     string
 	// Pub/Sub configuration
 	gcpProjectID  string
 	pubsubTopic   string
@@ -149,12 +150,13 @@ func main() {
 	svc.azureAnalyticsURL = os.Getenv("AZURE_ANALYTICS_URL")
 	svc.gcpCrmURL = os.Getenv("GCP_CRM_URL")
 	svc.gcpInventoryURL = os.Getenv("GCP_INVENTORY_URL")
-	svc.gcpFurnitureURL = os.Getenv("GCP_FURNITURE_URL")
+	svc.gcpAccountingURL = os.Getenv("GCP_ACCOUNTING_URL")
+	svc.gcpWarehouseURL = os.Getenv("GCP_WAREHOUSE_URL")
 	svc.gcpProjectID = os.Getenv("GCP_PROJECT_ID")
 	svc.pubsubTopic = os.Getenv("PUBSUB_TOPIC")
 	
-	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpFurniture=%q",
-		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpFurnitureURL)
+	log.Infof("Multicloud services configured: azureAnalytics=%q gcpCrm=%q gcpInventory=%q gcpAccounting=%q gcpWarehouse=%q",
+		svc.azureAnalyticsURL, svc.gcpCrmURL, svc.gcpInventoryURL, svc.gcpAccountingURL, svc.gcpWarehouseURL)
 
 	if svc.gcpProjectID != "" {
 		client, err := pubsub.NewClient(ctx, svc.gcpProjectID)
@@ -298,11 +300,6 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		// Don't fail the order, just log
 	}
 
-	// Check furniture service
-	if err := cs.checkFurniture(ctx); err != nil {
-		log.Warnf("Furniture check failed: %v", err)
-		// Don't fail the order, just log
-	}
 
 	total := pb.Money{CurrencyCode: req.UserCurrency,
 		Units: 0,
@@ -349,6 +346,16 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	if err := cs.manageCustomer(ctx, req.Email, req.Address, orderResult, totalFloat, req.UserCurrency); err != nil {
 		log.Warnf("Failed to update CRM: %v", err)
 		// Don't fail the order, just log
+	}
+
+	// Send transaction to Accounting
+	if err := cs.manageAccounting(ctx, orderResult.OrderId, prep.orderItems, req.UserCurrency, req.Email, req.UserId, prep.shippingCostLocalized); err != nil {
+		log.Warnf("Failed to update Accounting: %v", err)
+	}
+
+	// Send to Warehouse
+	if err := cs.manageWarehouse(ctx, orderResult.OrderId, prep.orderItems, shippingTrackingID, req.Address, req.Email, req.UserCurrency, prep.shippingCostLocalized); err != nil {
+		log.Warnf("Failed to send to Warehouse: %v", err)
 	}
 
 	if cs.pubsubClient != nil && cs.pubsubTopic != "" {
@@ -592,28 +599,48 @@ func (cs *checkoutService) checkInventory(ctx context.Context, items []*pb.CartI
 	return nil
 }
 
-// checkFurniture calls GCP Furniture Service via HA VPN
-func (cs *checkoutService) checkFurniture(ctx context.Context) error {
-	if cs.gcpFurnitureURL == "" {
-		log.Debug("GCP Furniture URL not configured, skipping")
+// manageAccounting calls GCP Accounting Service via POST
+func (cs *checkoutService) manageAccounting(ctx context.Context, orderID string, items []*pb.OrderItem, currency, email, userID string, shippingCost *pb.Money) error {
+	if cs.gcpAccountingURL == "" {
+		log.Debug("GCP Accounting URL not configured, skipping")
 		return nil
 	}
 
-	// GET furniture list (service returns array, just check if reachable)
-	err := cs.checkHTTP(ctx, cs.gcpFurnitureURL+"/furniture")
-	if err != nil {
-		log.Warnf("Failed to check furniture: %v", err)
-		return err
+	accountingData := map[string]interface{}{
+		"orderId": orderID,
+		"financials": map[string]interface{}{
+			"items":         items,
+			"shipping_cost": shippingCost,
+		},
+		"currency":      currency,
+		"customerEmail": email,
+		"userId":        userID,
 	}
 
-	// POST sample furniture item
-	furnitureData := map[string]interface{}{
-		"name":  "sofa",
-		"brand": "ikea",
+	log.Infof("Sending transaction to Accounting service: orderId=%s", orderID)
+	return cs.postJSON(ctx, cs.gcpAccountingURL+"/transactions", accountingData)
+}
+
+// manageWarehouse calls GCP Warehouse Service via POST
+func (cs *checkoutService) manageWarehouse(ctx context.Context, orderID string, items []*pb.OrderItem, trackingID string, address *pb.Address, email string, currency string, cost *pb.Money) error {
+	if cs.gcpWarehouseURL == "" {
+		log.Debug("GCP Warehouse URL not configured, skipping")
+		return nil
 	}
 
-	log.Infof("Checking furniture service")
-	return cs.postJSON(ctx, cs.gcpFurnitureURL+"/furniture", furnitureData)
+	warehouseData := map[string]interface{}{
+		"orderId":            orderID,
+		"email":              email,
+		"currency":           currency,
+		"trackingId":         trackingID,
+		"shippingCost":       cost,
+		"items":              items,
+		"destinationAddress": address,
+	}
+
+	log.Infof("Sending to Warehouse service: orderId=%s", orderID)
+	// We'll call /shipments endpoint as it was the previous design for warehouse-service
+	return cs.postJSON(ctx, cs.gcpWarehouseURL+"/shipments", warehouseData)
 }
 
 

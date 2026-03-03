@@ -99,8 +99,7 @@ spec:
           value: "{{ .Values.checkoutService.gcpCrmUrl | default "" }}"
         - name: GCP_INVENTORY_URL
           value: "{{ .Values.checkoutService.gcpInventoryUrl | default "" }}"
-        - name: GCP_FURNITURE_URL
-          value: "{{ .Values.checkoutService.gcpFurnitureUrl | default "" }}"
+
         - name: GCP_FOOD_URL
           value: "{{ .Values.checkoutService.gcpFoodUrl | default "" }}"
         - name: GCP_ACCOUNTING_URL

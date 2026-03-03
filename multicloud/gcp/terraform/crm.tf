@@ -480,10 +480,20 @@ resource "google_compute_url_map" "crm_frontend_url_map" {
   }
 }
 
-# 14. Create target HTTP proxy
-resource "google_compute_target_http_proxy" "crm_frontend_proxy" {
-  name    = "crm-frontend-http-proxy"
-  url_map = google_compute_url_map.crm_frontend_url_map.id
+# 14a. Create Managed SSL Certificate for CRM
+resource "google_compute_managed_ssl_certificate" "crm_cert" {
+  name = "crm-managed-cert"
+  managed {
+    # It must match the domain configured in dns.tf
+    domains = ["crm.gcp-ecommerce-demo.com."]
+  }
+}
+
+# 14b. Create target HTTPS proxy
+resource "google_compute_target_https_proxy" "crm_frontend_proxy" {
+  name             = "crm-frontend-https-proxy"
+  url_map          = google_compute_url_map.crm_frontend_url_map.id
+  ssl_certificates = [google_compute_managed_ssl_certificate.crm_cert.id]
 }
 
 # 15. Reserve a static external IP for the load balancer
@@ -491,11 +501,11 @@ resource "google_compute_global_address" "crm_frontend_ip" {
   name = "crm-frontend-lb-ip"
 }
 
-# 16. Create global forwarding rule (this is the external IP that users access)
+# 16. Create global forwarding rule for HTTPS
 resource "google_compute_global_forwarding_rule" "crm_frontend_forwarding_rule" {
   name                  = "crm-frontend-forwarding-rule"
-  target                = google_compute_target_http_proxy.crm_frontend_proxy.id
-  port_range            = "80"
+  target                = google_compute_target_https_proxy.crm_frontend_proxy.id
+  port_range            = "443"
   ip_address            = google_compute_global_address.crm_frontend_ip.address
   load_balancing_scheme = "EXTERNAL_MANAGED"
 }
@@ -546,7 +556,7 @@ resource "google_compute_firewall" "crm_frontend_to_backend" {
 
 # Outputs for frontend
 output "crm_frontend_url" {
-  value       = "http://${google_compute_global_address.crm_frontend_ip.address}"
+  value       = "https://${google_compute_global_address.crm_frontend_ip.address}"
   description = "Public URL to access the CRM frontend dashboard"
 }
 

@@ -107,14 +107,19 @@ resource "google_dns_record_set" "crm_frontend_public_record" {
   rrdatas      = [google_compute_global_address.crm_frontend_ip.address]
 }
 
+# Reserve a global static IP for the Online Boutique GKE Ingress
+resource "google_compute_global_address" "boutique_frontend_ip" {
+  name = "boutique-frontend-ingress-ip"
+}
+
 # Record Set: Online Boutique (Apex)
 resource "google_dns_record_set" "boutique_apex_record" {
   name         = data.google_dns_managed_zone.public_zone.dns_name
   type         = "A"
   ttl          = 300
   managed_zone = data.google_dns_managed_zone.public_zone.name
-  # Hardcoded based on the existing Kubernetes frontend-external LoadBalancer IP
-  rrdatas      = ["34.59.102.231"]
+  # Uses the Reserved Global IP allocated above for GKE Ingress
+  rrdatas      = [google_compute_global_address.boutique_frontend_ip.address]
 }
 
 # Record Set: Online Boutique (WWW)
@@ -123,7 +128,7 @@ resource "google_dns_record_set" "boutique_www_record" {
   type         = "A"
   ttl          = 300
   managed_zone = data.google_dns_managed_zone.public_zone.name
-  rrdatas      = ["34.59.102.231"]
+  rrdatas      = [google_compute_global_address.boutique_frontend_ip.address]
 }
 
 # Record Set: Documentation Portal

@@ -1,0 +1,23 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: boutique-managed-cert
+spec:
+  domains:
+    - gcp-ecommerce-demo.com
+    - www.gcp-ecommerce-demo.com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "boutique-frontend-ingress-ip"
+    networking.gke.io/managed-certificates: "boutique-managed-cert"
+    kubernetes.io/ingress.class: "gce"
+spec:
+  defaultBackend:
+    service:
+      name: frontend
+      port:
+        number: 80

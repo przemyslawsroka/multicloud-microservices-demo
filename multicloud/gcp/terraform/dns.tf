@@ -81,33 +81,57 @@ resource "google_dns_record_set" "azure_analytics_record" {
 variable "public_domain" {
   description = "The registered public domain for the demonstration"
   type        = string
-  default     = "multicloud-demo.example.com."
+  default     = "gcp-ecommerce-demo.com."
 }
 
-# Create a public DNS zone for internet-facing traffic
-resource "google_dns_managed_zone" "public_zone" {
-  name        = "public-boutique-zone"
-  dns_name    = var.public_domain
-  description = "Public DNS zone for external traffic to Apigee, GKE, and public VMs"
-  visibility  = "public"
-
-  depends_on = [google_project_service.dns_api]
+# Use automatically created public DNS zone for internet-facing traffic
+data "google_dns_managed_zone" "public_zone" {
+  name = "gcp-ecommerce-demo-com"
 }
 
 # Record Set: CRM Status Page (Direct Public VM Access)
 resource "google_dns_record_set" "crm_status_public_record" {
-  name         = "status.crm.${google_dns_managed_zone.public_zone.dns_name}"
+  name         = "status.crm.${data.google_dns_managed_zone.public_zone.dns_name}"
   type         = "A"
   ttl          = 300
-  managed_zone = google_dns_managed_zone.public_zone.name
+  managed_zone = data.google_dns_managed_zone.public_zone.name
   rrdatas      = [google_compute_address.crm_status_external_ip.address]
 }
 
 # Record Set: CRM Frontend (L7 External Load Balancer)
 resource "google_dns_record_set" "crm_frontend_public_record" {
-  name         = "crm.${google_dns_managed_zone.public_zone.dns_name}"
+  name         = "crm.${data.google_dns_managed_zone.public_zone.dns_name}"
   type         = "A"
   ttl          = 300
-  managed_zone = google_dns_managed_zone.public_zone.name
+  managed_zone = data.google_dns_managed_zone.public_zone.name
   rrdatas      = [google_compute_global_address.crm_frontend_ip.address]
+}
+
+# Record Set: Online Boutique (Apex)
+resource "google_dns_record_set" "boutique_apex_record" {
+  name         = data.google_dns_managed_zone.public_zone.dns_name
+  type         = "A"
+  ttl          = 300
+  managed_zone = data.google_dns_managed_zone.public_zone.name
+  # Hardcoded based on the existing Kubernetes frontend-external LoadBalancer IP
+  rrdatas      = ["34.59.102.231"]
+}
+
+# Record Set: Online Boutique (WWW)
+resource "google_dns_record_set" "boutique_www_record" {
+  name         = "www.${data.google_dns_managed_zone.public_zone.dns_name}"
+  type         = "A"
+  ttl          = 300
+  managed_zone = data.google_dns_managed_zone.public_zone.name
+  rrdatas      = ["34.59.102.231"]
+}
+
+# Record Set: Documentation Portal
+resource "google_dns_record_set" "docs_public_record" {
+  name         = "docs.${data.google_dns_managed_zone.public_zone.dns_name}"
+  type         = "CNAME"
+  ttl          = 300
+  managed_zone = data.google_dns_managed_zone.public_zone.name
+  # Documentation portal domain mapping is targeted to Cloud Run
+  rrdatas      = ["ghs.googlehosted.com."]
 }

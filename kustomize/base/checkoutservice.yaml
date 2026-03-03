@@ -72,7 +72,7 @@ spec:
           - name: AZURE_ANALYTICS_URL
             value: "http://10.2.1.5:8080"
           - name: GCP_CRM_URL
-            value: "http://10.3.0.20:8080"
+            value: "http://10.3.0.10:8080"
           - name: GCP_INVENTORY_URL
             value: "http://10.132.0.3:8080"
           - name: GCP_WAREHOUSE_URL

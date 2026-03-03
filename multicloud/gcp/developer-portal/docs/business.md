@@ -38,8 +38,8 @@ flowchart TD
     end
     
     subgraph Observability & AI
-        CRMAgent[CRM Agent / Concierge (Vertex AI)]
-        TrafficCollector[OOB Traffic Collector (DPI)]
+        CRMAgent["CRM Agent / Concierge (Vertex AI)"]
+        TrafficCollector["OOB Traffic Collector (DPI)"]
     end
     
     Checkout --> Inventory

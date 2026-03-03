@@ -70,8 +70,13 @@ markdown_extensions:
 
 nav:
   - Welcome: index.md
-  - Architecture Framework:
-    - Business Domains: business.md
-    - Technical Architecture: technical.md
-    - Cloud Networking: networking.md
-    - Infrastructure & DevOps: infrastructure.md
+  - Business Context: business.md
+  - System Architecture: technical.md
+  - Networking Patterns:
+    - Overview: networking.md
+    - External Load Balancer: patterns/external_lb.md
+    - Private Service Connect (PSC): patterns/psc.md
+    - Internal Load Balancer (ILB): patterns/ilb.md
+    - Multi-Cloud Connectivity: patterns/cross_cloud.md
+    - Out-of-Band Packet Mirroring: patterns/packet_mirroring.md
+  - Infrastructure & Deployment: infrastructure.md

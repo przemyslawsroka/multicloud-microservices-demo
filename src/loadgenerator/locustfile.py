@@ -59,6 +59,8 @@ def checkout(l):
     addToCart(l)
     current_year = datetime.datetime.now().year+1
     l.client.post("/cart/checkout", {
+        'first_name': fake.first_name(),
+        'last_name': fake.last_name(),
         'email': fake.email(),
         'street_address': fake.street_address(),
         'zip_code': fake.zipcode(),

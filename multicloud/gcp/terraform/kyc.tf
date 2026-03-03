@@ -6,6 +6,15 @@ resource "google_compute_network" "kyc_vpc" {
   description             = "Dedicated VPC for KYC service"
 }
 
+resource "google_network_management_vpc_flow_logs_config" "kyc_vpc_flow_logs" {
+  vpc_flow_logs_config_id = "kyc-vpc-flow-logs"
+  location                = "global"
+  network                 = google_compute_network.kyc_vpc.id
+  state                   = "ENABLED"
+  flow_sampling           = 1.0
+  aggregation_interval    = "INTERVAL_5_SEC"
+}
+
 resource "google_compute_subnetwork" "kyc_subnet" {
   name          = "kyc-subnet"
   ip_cidr_range = "10.6.0.0/24"

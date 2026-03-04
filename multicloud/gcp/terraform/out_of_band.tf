@@ -97,6 +97,12 @@ resource "google_compute_address" "oob_collector_ip" {
   subnetwork   = google_compute_subnetwork.oob_subnet_us.id
 }
 
+resource "google_compute_address" "oob_collector_external_ip" {
+  project = var.project_id
+  name    = "oob-collector-external-ip"
+  region  = "us-central1"
+}
+
 resource "google_compute_instance" "oob_collector_vm" {
   project      = var.project_id
   name         = "traffic-collector-vm"
@@ -114,7 +120,9 @@ resource "google_compute_instance" "oob_collector_vm" {
     network    = google_compute_network.crm_vpc.id
     subnetwork = google_compute_subnetwork.oob_subnet_us.id
     network_ip = google_compute_address.oob_collector_ip.address
-    access_config {} # Give it external IP to download pip/flask easily
+    access_config {
+      nat_ip = google_compute_address.oob_collector_external_ip.address
+    }
   }
 
   metadata_startup_script = file("${path.module}/../traffic-collector/startup.sh")
@@ -152,7 +160,7 @@ resource "google_compute_firewall" "allow_oob_collector" {
 }
 
 output "traffic_collector_dashboard" {
-  value = "http://${google_compute_instance.oob_collector_vm.network_interface.0.access_config.0.nat_ip}:5000"
+  value = "http://${google_compute_address.oob_collector_external_ip.address}:5000"
 }
 
 resource "google_network_security_mirroring_deployment" "oob_md_a" {

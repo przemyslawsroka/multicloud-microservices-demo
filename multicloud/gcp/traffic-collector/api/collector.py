@@ -27,6 +27,20 @@ def init_db():
             payload TEXT
         )
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS stats (
+            protocol TEXT PRIMARY KEY,
+            bytes INTEGER DEFAULT 0,
+            count INTEGER DEFAULT 0
+        )
+    ''')
+    # Initialize stats if empty to preserve existing history
+    c.execute('SELECT COUNT(*) FROM stats')
+    if c.fetchone()[0] == 0:
+        c.execute('''
+            INSERT INTO stats (protocol, bytes, count)
+            SELECT protocol, SUM(size), COUNT(*) FROM packets GROUP BY protocol
+        ''')
     conn.commit()
     conn.close()
 
@@ -148,6 +162,20 @@ def udp_collector_loop():
                 INSERT INTO packets (timestamp, src_ip, dst_ip, src_port, dst_port, protocol, size, pattern_match, payload)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (timestamp, src_ip, dst_ip, src_port, dst_port, protocol, size, pattern_match, payload))
+            
+            c.execute('''
+                INSERT INTO stats (protocol, bytes, count)
+                VALUES (?, ?, 1)
+                ON CONFLICT(protocol) DO UPDATE SET
+                    bytes = bytes + excluded.bytes,
+                    count = count + 1
+            ''', (protocol, size))
+            
+            # Prune older packets dynamically to save memory while keeping stats increasing
+            # Only keeping the last 2000 packets and executing conditionally avoids constant DB locking
+            if random.random() < 0.05:
+                c.execute('DELETE FROM packets WHERE id NOT IN (SELECT id FROM packets ORDER BY id DESC LIMIT 2000)')
+                
             conn.commit()
         except Exception as e:
             print(f"Collector error: {e}")
@@ -184,7 +212,7 @@ def get_packets():
 def get_stats():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute('SELECT protocol, sum(size), count(*) FROM packets GROUP BY protocol')
+    c.execute('SELECT protocol, bytes, count FROM stats')
     rows = c.fetchall()
     conn.close()
     

@@ -1,0 +1,13 @@
+{
+  "name": "gdpr-wipeout",
+  "version": "1.0.0",
+  "description": "Cloud Run Job to wipe CRM data older than 3 hours",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.9.1",
+    "sequelize": "^6.37.1"
+  }
+}

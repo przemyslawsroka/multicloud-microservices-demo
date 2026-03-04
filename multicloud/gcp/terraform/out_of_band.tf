@@ -256,14 +256,14 @@ resource "google_compute_network_firewall_policy" "mirroring_policy" {
 }
 
 resource "google_compute_network_firewall_policy_rule" "mirror_all" {
-  project                = var.project_id
-  firewall_policy        = google_compute_network_firewall_policy.mirroring_policy.name
-  rule_name              = "mirror-all"
-  priority               = 0
-  action                 = "mirror"
-  direction              = "INGRESS"
+  project         = var.project_id
+  firewall_policy = google_compute_network_firewall_policy.mirroring_policy.name
+  rule_name       = "mirror-all"
+  priority        = 0
+  action          = "mirror"
+  direction       = "INGRESS"
   match {
-    src_ip_ranges = ["0.0.0.0/0"]
+    src_ip_ranges  = ["0.0.0.0/0"]
     dest_ip_ranges = ["0.0.0.0/0"]
     layer4_configs {
       ip_protocol = "all"

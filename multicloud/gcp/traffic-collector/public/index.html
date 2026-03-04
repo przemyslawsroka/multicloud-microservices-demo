@@ -26,6 +26,23 @@
         </header>
 
         <main class="dashboard-grid">
+            <section class="card glass-card info-section" style="grid-column: 1 / -1; padding: 2rem; margin-bottom: 0;">
+                <h2
+                    style="font-size: 1.25rem; font-weight: 500; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg" alt="Google Cloud"
+                        style="height: 28px;">
+                    Google Cloud Packet Mirroring Architecture
+                </h2>
+                <div style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem;">
+                    <p style="margin-bottom: 0.75rem;">This dashboard continuously visualizes real-time network traffic captured
+                        seamlessly from the <strong>Online Boutique VPC</strong>. Our network natively clones packet streams without
+                        adding latency or overhead to your production workloads.</p>
+                    <p>Powered by an entirely <strong>Out-of-Band (OOB)</strong> design, all cloned traffic is encapsulated via the
+                        <strong>UDP Geneve</strong> protocol and cleanly routed through an Internal Load Balancer to this custom
+                        Deep Packet Inspection (DPI) engine. We immediately parse incoming raw bits to intelligently intercept
+                        anomalies like SQL Injections, Cross-Site Scripting (XSS), and exposed plaintext credentials.</p>
+                </div>
+            </section>
             <section class="card glass-card top-stats">
                 <div class="stat-box">
                     <h3>Total Packets Captured</h3>

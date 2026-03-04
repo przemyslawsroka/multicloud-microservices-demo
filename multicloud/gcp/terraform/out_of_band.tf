@@ -160,7 +160,7 @@ resource "google_compute_firewall" "allow_oob_collector" {
 }
 
 output "traffic_collector_dashboard" {
-  value = "http://${google_compute_address.oob_collector_external_ip.address}:5000"
+  value = "http://traffic.${trimsuffix(data.google_dns_managed_zone.public_zone.dns_name, ".")}:5000"
 }
 
 resource "google_network_security_mirroring_deployment" "oob_md_a" {

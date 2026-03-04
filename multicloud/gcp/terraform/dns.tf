@@ -140,3 +140,12 @@ resource "google_dns_record_set" "docs_public_record" {
   # Documentation portal domain mapping is targeted to Cloud Run
   rrdatas = ["ghs.googlehosted.com."]
 }
+
+# Record Set: Traffic Collector Dashboard
+resource "google_dns_record_set" "traffic_collector_record" {
+  name         = "traffic.${data.google_dns_managed_zone.public_zone.dns_name}"
+  type         = "A"
+  ttl          = 300
+  managed_zone = data.google_dns_managed_zone.public_zone.name
+  rrdatas      = [google_compute_address.oob_collector_external_ip.address]
+}

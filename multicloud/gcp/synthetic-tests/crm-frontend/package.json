@@ -1,0 +1,13 @@
+{
+  "name": "frontend-journey-monitor",
+  "version": "1.0.0",
+  "description": "Puppeteer script for validating overarching UI routing map",
+  "main": "index.js",
+  "dependencies": {
+    "puppeteer": "^21.0.0",
+    "@google-cloud/synthetics-sdk-api": "*"
+  },
+  "scripts": {
+    "gcp-build": "npx puppeteer browsers install chrome"
+  }
+}

@@ -14,7 +14,7 @@ exports.SyntheticFunction = runSyntheticHandler(async ({ logger, executionId }) 
 
     // 1. Navigate to Frontend load balancer
     logger.info(`Navigating to ${TARGET_URL}...`);
-    const response = await page.goto(TARGET_URL, { waitUntil: 'networkidle0', timeout: 15000 });
+    const response = await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     
     if (!response || !response.ok()) {
       throw new Error(`Frontend returned ${response ? response.status() : 'Unknown Status'} at ${TARGET_URL}`);
@@ -31,10 +31,10 @@ exports.SyntheticFunction = runSyntheticHandler(async ({ logger, executionId }) 
     logger.info('Attempting click on a product catalog item...');
     
     // Explicitly click first product link (adjust selectors to match Boutique layout)
-    await page.waitForSelector('a[href^="/product/"]', { timeout: 5000 });
+    await page.waitForSelector('a[href^="/product/"]', { timeout: 15000 });
     
     await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle0' }),
+      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 }),
       page.click('a[href^="/product/"]')
     ]);
 

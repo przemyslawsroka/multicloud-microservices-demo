@@ -17,7 +17,7 @@ app.post('/', async (req, res) => {
     const decodedData = Buffer.from(pubsubData, 'base64').toString('utf-8');
     const orderEvent = JSON.parse(decodedData);
     
-    console.log(`[OMS] Processing OrderConfirmedEvent for OrderID: ${orderEvent.order.order_id}`);
+    console.log(`[OMS] Processing OrderConfirmedEvent for OrderID: ${orderEvent.order_id}`);
 
     // Native Node v18+ fetch is used here
     const ACCOUNTING_SERVICE_URL = process.env.ACCOUNTING_SERVICE_URL;
@@ -28,10 +28,10 @@ app.post('/', async (req, res) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            orderId: orderEvent.order.order_id,
+            orderId: orderEvent.order_id,
             financials: {
-              items: orderEvent.order.items,
-              shipping_cost: orderEvent.order.shipping_cost
+              items: orderEvent.items,
+              shipping_cost: orderEvent.shipping_cost
             },
             currency: orderEvent.user_currency,
             customerEmail: orderEvent.email,
@@ -52,10 +52,10 @@ app.post('/', async (req, res) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            orderId: orderEvent.order.order_id,
-            trackingId: orderEvent.order.shipping_tracking_id,
-            items: orderEvent.order.items.map(i => ({ product_id: i.item.product_id, quantity: i.item.quantity })),
-            destinationAddress: orderEvent.order.shipping_address
+            orderId: orderEvent.order_id,
+            trackingId: orderEvent.shipping_tracking_id,
+            items: orderEvent.items.map(i => ({ product_id: i.item.product_id, quantity: i.item.quantity })),
+            destinationAddress: orderEvent.shipping_address
           })
         });
         if (!warRes.ok) console.error(`[Warehouse Error] HTTP ${warRes.status}`);

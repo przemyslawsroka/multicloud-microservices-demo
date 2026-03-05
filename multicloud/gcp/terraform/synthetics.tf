@@ -51,6 +51,32 @@ resource "google_storage_bucket_object" "frontend_journey_obj" {
   source = data.archive_file.frontend_journey_zip.output_path
 }
 
+# Archive the CRM frontend source
+data "archive_file" "crm_frontend_zip" {
+  type        = "zip"
+  output_path = "${path.module}/crm_frontend.zip"
+  source_dir  = "${path.module}/../synthetic-tests/crm-frontend"
+}
+
+resource "google_storage_bucket_object" "crm_frontend_obj" {
+  name   = "crm_frontend_${data.archive_file.crm_frontend_zip.output_md5}.zip"
+  bucket = google_storage_bucket.synthetics_source_bucket.name
+  source = data.archive_file.crm_frontend_zip.output_path
+}
+
+# Archive the CRM agent source
+data "archive_file" "crm_agent_zip" {
+  type        = "zip"
+  output_path = "${path.module}/crm_agent.zip"
+  source_dir  = "${path.module}/../synthetic-tests/crm-agent"
+}
+
+resource "google_storage_bucket_object" "crm_agent_obj" {
+  name   = "crm_agent_${data.archive_file.crm_agent_zip.output_md5}.zip"
+  bucket = google_storage_bucket.synthetics_source_bucket.name
+  source = data.archive_file.crm_agent_zip.output_path
+}
+
 # -----------------------------------------------------------------------------------------
 # 1. CRM Internal API Monitor (Attached to CRM VPC)
 # -----------------------------------------------------------------------------------------
@@ -193,14 +219,14 @@ resource "google_cloudfunctions2_function" "frontend_synthetic_func" {
     timeout_seconds    = 120
     environment_variables = {
       PUPPETEER_CACHE_DIR = "/workspace/.cache/puppeteer"
-      TARGET_URL          = "http://34.59.102.231" # Adjust dynamically if frontend yields an IP
+      TARGET_URL          = "https://gcp-ecommerce-demo.com/"
     }
   }
   depends_on = [google_project_service.synthetics_apis]
 }
 
 resource "google_monitoring_uptime_check_config" "frontend_synthetic_check" {
-  display_name = "Frontend User Journey Synthetic Check"
+  display_name = "Ecommerce Frontend Synthetic Check"
   timeout      = "60s"
   period       = "300s"
   project      = var.project_id
@@ -208,6 +234,98 @@ resource "google_monitoring_uptime_check_config" "frontend_synthetic_check" {
   synthetic_monitor {
     cloud_function_v2 {
       name = google_cloudfunctions2_function.frontend_synthetic_func.id
+    }
+  }
+}
+
+# -----------------------------------------------------------------------------------------
+# 4. CRM Frontend Monitor (Puppeteer E2E Check)
+# -----------------------------------------------------------------------------------------
+
+resource "google_cloudfunctions2_function" "crm_frontend_synthetic_func" {
+  name     = "crm-frontend-synthetic"
+  location = "us-central1"
+  project  = var.project_id
+
+  build_config {
+    runtime     = "nodejs20"
+    entry_point = "SyntheticFunction"
+    environment_variables = {
+      PUPPETEER_CACHE_DIR = "/workspace/.cache/puppeteer"
+    }
+    source {
+      storage_source {
+        bucket = google_storage_bucket.synthetics_source_bucket.name
+        object = google_storage_bucket_object.crm_frontend_obj.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count = 1
+    available_memory   = "2G"
+    timeout_seconds    = 120
+    environment_variables = {
+      PUPPETEER_CACHE_DIR = "/workspace/.cache/puppeteer"
+      TARGET_URL          = "https://crm.gcp-ecommerce-demo.com/"
+    }
+  }
+  depends_on = [google_project_service.synthetics_apis]
+}
+
+resource "google_monitoring_uptime_check_config" "crm_frontend_synthetic_check" {
+  display_name = "CRM Frontend Synthetic Check"
+  timeout      = "60s"
+  period       = "300s"
+  project      = var.project_id
+
+  synthetic_monitor {
+    cloud_function_v2 {
+      name = google_cloudfunctions2_function.crm_frontend_synthetic_func.id
+    }
+  }
+}
+
+# -----------------------------------------------------------------------------------------
+# 5. CRM Agent Monitor
+# -----------------------------------------------------------------------------------------
+
+resource "google_cloudfunctions2_function" "crm_agent_synthetic_func" {
+  name     = "crm-agent-synthetic"
+  location = "us-central1"
+  project  = var.project_id
+
+  build_config {
+    runtime     = "nodejs20"
+    entry_point = "SyntheticFunction"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.synthetics_source_bucket.name
+        object = google_storage_bucket_object.crm_agent_obj.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count = 1
+    available_memory   = "256M" # Fetch doesn't need much memory
+    timeout_seconds    = 60
+    environment_variables = {
+      AGENT_URL = "https://crm.gcp-ecommerce-demo.com/api/agent/chat"
+    }
+  }
+  depends_on = [google_project_service.synthetics_apis]
+}
+
+resource "google_monitoring_uptime_check_config" "crm_agent_synthetic_check" {
+  display_name = "CRM Agent Synthetic Check - John Doe Query"
+  timeout      = "60s"
+  period       = "300s"
+  project      = var.project_id
+
+  synthetic_monitor {
+    cloud_function_v2 {
+      name = google_cloudfunctions2_function.crm_agent_synthetic_func.id
     }
   }
 }

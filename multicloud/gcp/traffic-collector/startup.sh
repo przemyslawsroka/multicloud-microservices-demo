@@ -16,17 +16,6 @@ sleep 5
 
 pip3 install flask
 
-# Simple fake healthcheck server on port 80 since Load balancer expects that
-cat <<EOF > /opt/traffic-collector/hc.py
-from http.server import BaseHTTPRequestHandler, HTTPServer
-class S(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"OK")
-HTTPServer(('', 80), S).serve_forever()
-EOF
-
 # Create a systemd services
 cat <<EOF > /etc/systemd/system/traffic-collector.service
 [Unit]
@@ -45,26 +34,6 @@ User=root
 WantedBy=multi-user.target
 EOF
 
-cat <<EOF > /etc/systemd/system/hc.service
-[Unit]
-Description=Healthcheck Server
-After=network.target
-
-[Service]
-ExecStart=/usr/bin/python3 /opt/traffic-collector/hc.py
-WorkingDirectory=/opt/traffic-collector
-StandardOutput=inherit
-StandardError=inherit
-Restart=always
-User=root
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-
 systemctl daemon-reload
 systemctl enable traffic-collector
 systemctl start traffic-collector
-systemctl enable hc
-systemctl start hc

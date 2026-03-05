@@ -172,9 +172,9 @@ def udp_collector_loop():
             ''', (protocol, size))
             
             # Prune older packets dynamically to save memory while keeping stats increasing
-            # Only keeping the last 2000 packets and executing conditionally avoids constant DB locking
+            # Only keeping the last 200 packets and executing conditionally avoids constant DB locking
             if random.random() < 0.05:
-                c.execute('DELETE FROM packets WHERE id NOT IN (SELECT id FROM packets ORDER BY id DESC LIMIT 2000)')
+                c.execute('DELETE FROM packets WHERE id NOT IN (SELECT id FROM packets ORDER BY id DESC LIMIT 200)')
                 
             conn.commit()
         except Exception as e:
@@ -239,4 +239,4 @@ if __name__ == '__main__':
     t = threading.Thread(target=udp_collector_loop, daemon=True)
     t.start()
     
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=80)

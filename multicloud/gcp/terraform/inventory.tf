@@ -177,6 +177,11 @@ resource "google_compute_region_backend_service" "inventory_backend" {
     group          = google_compute_instance_group.inventory_instance_group.id
     balancing_mode = "CONNECTION"
   }
+
+  log_config {
+    enable      = true
+    sample_rate = 1.0
+  }
 }
 
 # 9. Create instance group

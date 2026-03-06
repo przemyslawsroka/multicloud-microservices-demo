@@ -6,7 +6,34 @@ By distributing resources globally, the architecture simulates realistic physica
 
 ---
 
-## 1. Multi-Regional Deployment Topology
+## 1. Network Observability
+
+Detailed visibility into cross-cloud traffic flows is essential for maintaining enterprise operational baselines. We leverage Google Cloud's extensive logging and partner solutions to monitor packet health securely.
+
+### Cloud Network Insights (AppNeta / Broadcom Preview)
+This environment serves as a testbed for **Cloud Network Insights**—a collaborative preview product between AppNeta (Broadcom) and Google Cloud. The deployment features:
+*   **Target Monitoring Points**: A dedicated `monitoring-point-hybrid-vpc` Compute Engine VM sits inside the transit network (`hybrid-vpc`). This acts as the host-mode software container for the agent.
+*   **Custom Firewall Configurations**: To successfully operate the monitoring daemon and validate global routes, the `hybrid-vpc` rigidly enforces granular ingress points. It accepts all standard tracing telemetry (IPv4 ICMP/Echo) and opens precise TCP ports (`443, 3236, 3238`) and UDP ports (`7, 1720, 3236-3239, 5060, 33434, 49150`) allowing the agent to continuously build exact cross-cloud latency topologies natively.
+
+---
+
+## 2. Advanced Multi-Cloud Connectivity (Hub & Spoke)
+
+Deploying identical demo iterations rapidly inherently yields massive IP conflict risks locally when peering directly with central enterprise backbones.
+
+### The IP Overlap Challenge
+The project orchestrates multiple ephemeral `online-boutique-vpc` environments dynamically, consistently re-using the `10.128.0.0/20` subnet aggressively to maintain Terraform homogeneity. However, a single central shared network (the *Hub*, hosting the Azure Interconnect in `location-verification`) cannot functionally peer with multiple identically addressed networks simultaneously because BGP routing maps critically collide.
+
+### The Transit Architecture & PSC Bridge
+1. **The Transit Router (`hybrid-vpc`)**: Instead of peering the demo natively, a centralized pipeline (`hybrid-vpc`) operates as the sole peered bridge to the Interconnect Hub actively. It utilizes a tiny, completely distinct disjointed IP class (`10.250.0.0/24`).
+2. **Serverless Private Service Connect (PSC)**: Because GCP limits non-transitive VPC peering from organically forwarding traffic directly onward into Azure, we implement advanced L4 Private Service Connect endpoints directly.
+    * An Internal TCP Proxy Load Balancer sits securely inside `hybrid-vpc` backing a Hybrid Network Endpoint Group (NEG) tied specifically to the proprietary Azure VM IP (`10.2.1.5`).
+    * The L4 Proxy publishes itself as a Service Attachment leveraging explicit internal NAT processing completely masking and segregating the `10.128` demo overlap automatically preventing upstream route disruption.
+    * The primary `online-boutique-vpc` connects actively utilizing two localized private IPs mapped seamlessly to this attachment. HTTP legacy workloads target `10.128.0.50` (port `80`) and alternative pipelines securely request `10.128.0.51` executing proxy transitions perfectly aligned to Azure's port `8080`.
+
+---
+
+## 3. Multi-Regional Deployment Topology
 
 To ensure strict network boundaries and to study high-latency structural conditions authentically, backend and API processes execute in disparate geographical zones.
 
@@ -39,7 +66,7 @@ To ensure strict network boundaries and to study high-latency structural conditi
 
 ---
 
-## 2. Infrastructure as Code (Terraform)
+## 4. Infrastructure as Code (Terraform)
 
 Deploying a multi-region, multi-cloud environment completely securely necessitates declarative Infrastructure as Code pipelines precisely decoupling application routing tables. Automation actively targets modular directories specifically eliminating monolithic, deeply interconnected configuration files inherently.
 
@@ -54,7 +81,7 @@ Deploying a multi-region, multi-cloud environment completely securely necessitat
 
 ---
 
-## 3. Perimeter Governance
+## 5. Perimeter Governance
 
 ### VPC Service Controls (VPC SC)
 Data isolation actively demands structural controls natively preventing lateral exfiltration natively across IAM boundaries specifically.

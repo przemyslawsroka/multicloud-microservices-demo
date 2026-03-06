@@ -112,8 +112,6 @@ metadata:
   name: frontend
   labels:
     app: frontend
-  annotations:
-    cloud.google.com/backend-config: '{"default": "frontend-backendconfig"}'
 spec:
   type: NodePort
   selector:
@@ -123,15 +121,20 @@ spec:
     port: 80
     targetPort: 8080
 ---
-apiVersion: cloud.google.com/v1
-kind: BackendConfig
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
 metadata:
-  name: frontend-backendconfig
+  name: frontend-backendpolicy
   namespace: default
 spec:
-  logging:
-    enable: true
-    sampleRate: 1.0
+  default:
+    logging:
+      enabled: true
+      sampleRate: 1000000
+  targetRef:
+    group: ""
+    kind: Service
+    name: frontend
 ---
 apiVersion: v1
 kind: ServiceAccount

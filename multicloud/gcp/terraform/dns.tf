@@ -149,3 +149,39 @@ resource "google_dns_record_set" "traffic_collector_record" {
   managed_zone = data.google_dns_managed_zone.public_zone.name
   rrdatas      = [google_compute_address.oob_collector_external_ip.address]
 }
+
+# ============================================================================
+# CERTIFICATE MANAGER (GKE GATEWAY)
+# ============================================================================
+resource "google_project_service" "cert_manager_api" {
+  service            = "certificatemanager.googleapis.com"
+  disable_on_destroy = false
+}
+resource "google_certificate_manager_certificate" "boutique_cert" {
+  name        = "boutique-managed-cert"
+  description = "Managed certificate for Online Boutique Gateway"
+  managed {
+    domains = [
+      trimsuffix(data.google_dns_managed_zone.public_zone.dns_name, "."),
+      "www.${trimsuffix(data.google_dns_managed_zone.public_zone.dns_name, ".")}"
+    ]
+  }
+}
+
+resource "google_certificate_manager_certificate_map" "boutique_cert_map" {
+  name = "boutique-cert-map"
+}
+
+resource "google_certificate_manager_certificate_map_entry" "boutique_cert_map_entry_apex" {
+  name         = "entry-apex"
+  map          = google_certificate_manager_certificate_map.boutique_cert_map.name
+  certificates = [google_certificate_manager_certificate.boutique_cert.id]
+  hostname     = trimsuffix(data.google_dns_managed_zone.public_zone.dns_name, ".")
+}
+
+resource "google_certificate_manager_certificate_map_entry" "boutique_cert_map_entry_www" {
+  name         = "entry-www"
+  map          = google_certificate_manager_certificate_map.boutique_cert_map.name
+  certificates = [google_certificate_manager_certificate.boutique_cert.id]
+  hostname     = "www.${trimsuffix(data.google_dns_managed_zone.public_zone.dns_name, ".")}"
+}

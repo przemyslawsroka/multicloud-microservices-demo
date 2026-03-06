@@ -22,11 +22,15 @@ Securing an endpoint over HTTPS requires a Google-managed SSL certificate and a 
 **Endpoint:** `gcp-ecommerce-demo.com` and `www.gcp-ecommerce-demo.com`
 
 * **Platform:** GKE (Kubernetes).
-* **Mechanism:** GKE `Ingress` controller coupled with a `ManagedCertificate` Custom Resource Definition (CRD).
-* **Process:** Instead of directly exposing a basic TCP `LoadBalancer` NodePort service (which runs only on port 80 and provides no TLS termination natively), we utilize GKE's native Ingress features:
-    1. A **Reserved Global Static IP** is provisioned centrally via Terraform.
-    2. A `ManagedCertificate` CRD enumerates the exact domain hostnames that must be protected.
-    3. An `Ingress` resource creates a Google Cloud HTTP(S) Load Balancer behind the scenes. Using the `kubernetes.io/ingress.global-static-ip-name` annotation alongside the `networking.gke.io/managed-certificates` annotation binds the reserved Terraform IP and newly minted SSL certificate to the `frontend` application service.
+* **Mechanism:** GKE `Gateway API` (using `gke-l7-global-external-managed` GatewayClass) coupled with Google Cloud `Certificate Manager`.
+* **Process:** Instead of using the legacy `Ingress` controller, this demo utilizes the modern Kubernetes Gateway API to orchestrate a Global External Application Load Balancer:
+    1. **Certificate Manager**: Terraform provisions a `google_certificate_manager_certificate` and a Certificate Map. This provides a robust, cluster-independent framework for managing SSL certificates, allowing the Gateway to seamlessly terminate TLS traffic.
+    2. **Gateway Resource**: A Kubernetes `Gateway` is deployed, binding the reserved static IP and the Certificate Map to both an `http` (Port 80) and an `https` (Port 443) listener.
+    3. **HTTP-to-HTTPS Redirect**: Securing the site forcefully is achieved by deploying two isolated `HTTPRoute` resources:
+        * **`frontend-route`**: Attaches exclusively to the `https` listener to route secure traffic to the application pods.
+        * **`frontend-redirect`**: Attaches exclusively to the `http` listener with a `RequestRedirect` filter (statusCode: 301, scheme: https), automatically bouncing all unencrypted traffic.
+
+    *Educational Note: When viewing this setup in the Google Cloud Console, you will see **two** Load Balancers listed for this Gateway. This is because Gateway API strictly isolates listeners, prompting Google Cloud to create dedicated Target Proxies and URL Maps for HTTP and HTTPS respectively. This is the intended architecture and does not incur double the base forwarding rule cost!*
 
 ### 3. CRM Dashboard (Compute Engine)
 **Endpoint:** `crm.gcp-ecommerce-demo.com`

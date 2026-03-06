@@ -86,7 +86,10 @@ resource "google_compute_region_backend_service" "azure_http_backend" {
   load_balancing_scheme = "INTERNAL_MANAGED"
   health_checks         = [google_compute_region_health_check.azure_http_hc.id]
   backend {
-    group = google_compute_network_endpoint_group.azure_http_neg.id
+    group                        = google_compute_network_endpoint_group.azure_http_neg.id
+    balancing_mode               = "CONNECTION"
+    max_connections_per_endpoint = 1000
+    capacity_scaler              = 1.0
   }
 }
 
@@ -97,7 +100,10 @@ resource "google_compute_region_backend_service" "azure_http8080_backend" {
   load_balancing_scheme = "INTERNAL_MANAGED"
   health_checks         = [google_compute_region_health_check.azure_http8080_hc.id]
   backend {
-    group = google_compute_network_endpoint_group.azure_http8080_neg.id
+    group                        = google_compute_network_endpoint_group.azure_http8080_neg.id
+    balancing_mode               = "CONNECTION"
+    max_connections_per_endpoint = 1000
+    capacity_scaler              = 1.0
   }
 }
 

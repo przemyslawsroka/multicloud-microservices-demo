@@ -238,4 +238,53 @@ data "google_project" "current_project" {
   project_id = var.project_id
 }
 
+resource "google_network_security_security_profile" "mirroring_profile" {
+  provider = google-beta
+  name     = "mirroring-profile"
+  parent   = "organizations/221444484192"
+  location = "global"
+  type     = "CUSTOM_MIRRORING"
+  custom_mirroring_profile {
+    mirroring_endpoint_group = google_network_security_mirroring_endpoint_group.oob_meg.id
+  }
+}
+
+resource "google_network_security_security_profile_group" "mirroring_group" {
+  provider                 = google-beta
+  name                     = "mirroring-group"
+  parent                   = "organizations/221444484192"
+  location                 = "global"
+  custom_mirroring_profile = google_network_security_security_profile.mirroring_profile.id
+}
+
+resource "google_compute_network_firewall_policy" "mirroring_policy" {
+  project     = var.project_id
+  name        = "mirroring-policy"
+  description = "Network firewall policy for OOB packet mirroring"
+}
+
+resource "google_compute_network_firewall_policy_rule" "mirror_all" {
+  project         = var.project_id
+  firewall_policy = google_compute_network_firewall_policy.mirroring_policy.name
+  rule_name       = "mirror-all"
+  priority        = 1000
+  action          = "mirror"
+  direction       = "INGRESS"
+  match {
+    src_ip_ranges  = ["0.0.0.0/0"]
+    dest_ip_ranges = ["0.0.0.0/0"]
+    layer4_configs {
+      ip_protocol = "all"
+    }
+  }
+  security_profile_group = google_network_security_security_profile_group.mirroring_group.id
+}
+
+resource "google_compute_network_firewall_policy_association" "mirroring_policy_assoc" {
+  project           = var.project_id
+  name              = "online-boutique-vpc-mirroring-assoc"
+  attachment_target = google_compute_network.ob_vpc.id
+  firewall_policy   = google_compute_network_firewall_policy.mirroring_policy.name
+}
+
 
